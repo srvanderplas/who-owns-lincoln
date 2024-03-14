@@ -1,0 +1,138 @@
+---
+title: "Who Owns Lincoln? Exploring Lancaster County Property Tax Records"
+format: html
+execute: 
+  cache: true
+  echo: false
+  message: false
+  warning: false
+---
+
+
+```{r}
+#| include: false
+
+library(tidyr)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+library(stringr)
+library(readxl)
+library(geojsonio)
+library(DT)
+library(skimr)
+library(naniar)
+
+```
+
+Justice in Action adopted a 3rd advocacy area in 2023 - Affordable housing. One of the most promising areas to tackle is the application fee/background check fee, which must be paid to each landlord with no guarantee of acceptance and no refunds. In order to propose a more just system, Justice in Action needs to understand who might be affected by different proposed solutions - in other words, who owns rental housing in Lincoln?
+
+There are several potential avenues for public data which might help answer this question: 
+
+- property tax/assessment records, 
+- rental registration records,
+
+
+Of primary interest is to determine whether housing is owned by:
+
+- LLCs or individuals
+- in-state vs. out-of-state owners
+
+In addition, it would be good to figure out how many units each owner operates (potentially) to assess the feasibility of working with e.g. the largest N landlords who own 80% or more of housing in Lincoln. 
+
+
+## Data Acquisition
+
+### Land Use Map
+
+A land use geojson file was obtained from Lincoln's open data site ([link](https://opendata.lincoln.ne.gov/datasets/9f1248c80d9a41caa55da937ad002d86_1)). 
+
+```{r}
+geodata <- geojson_sf("data/Existing_Land_Use.geojson")
+```
+
+This data does not appear to have parcel numbers, so it is not as useful as anticipated.
+
+### Property Assessment Records
+
+Two xlsx files were acquired from Doug R. Guess of the Lancaster County GIS office on 2024-03-13; the total cost of the database search was $60 (+ $2 processing fee). The information is publicly available at https://app.lincoln.ne.gov/aspx/cnty/cto/, but assembling the full dataset would require assembling data from approximately `r 26^3` queries; it was deemed reasonable to pay for the data rather than assemble it manually. 
+
+```{r}
+lc_data1 <- read_xlsx("data/SusanVanderPlas.xlsx")
+lc_data2 <- read_xlsx("data/SusanVanderPlas-New.xlsx")
+```
+
+- data/SusanVanderplas.xlsx contains `r nrow(lc_data1)` rows and `r nrow(lc_data1)` columns, including the following columns not present in the initial data file: `r paste(setdiff(names(lc_data1), names(lc_data2)), collapse = ", ")`
+- data/SusanVanderplas-New.xlsx contains `r nrow(lc_data2)` rows and `r nrow(lc_data2)` columns, including the following columns not present in the initial data file: `r paste(setdiff(names(lc_data2), names(lc_data1)), collapse = ", ")`
+
+Further analysis shows that 
+
+- `PrimeUseDesc` and `PrimaryUseDesc` have the same 28 levels (and are thus most likely duplicated columns)
+- `Prop_ClassDesc` and `PropertyClassDesc` have the same 8 levels
+
+Joining the two datasets on common variables allowed verification that (`TotalAcres`, `Total_Acres`) and (`SitusAddress`, `Situs`) contain the same information. In addition, joining the two datasets on all variables did not produce any non-matching rows, indicating that `data/SusanVanderPlas.xlsx` contains a subset of the data present in `data/SusanVanderPlas-New.xlsx`. 
+What is curious is that `data/SusanVanderPlas-New.xlsx` contains more rows and columns than `data/SusanVanderplas.xlsx` but takes up approximately 0.3 MB less space on disk.
+
+```{r}
+lc_data1_fix <- lc_data1 %>%
+  rename(PrimaryUseDesc = PrimeUseDesc, PropertyClassDesc = Prop_ClassDesc, TotalAcres = Total_Acres, SitusAddress = Situs)
+lc_data <- full_join(lc_data1_fix, lc_data2)
+rm(lc_data1_fix, lc_data1, lc_data2)
+```
+
+After joining the two data tables to ensure that the maximum information available is analyzed, there are `r nrow(lc_data)` records with `r ncol(lc_data)` available variables. 
+
+```{r}
+skim(lc_data)
+```
+
+Breaking this summary down, we can see associations between variable missingness, which likely occurs due to the difference between residential and commercial properties, assessments, and valuation. Examining this hypothesis with a 10% sample of the data, clustering observations by missingness, we can see that the bottom group of observations is largely missing the assessment information for residential housing, such as `ResTypeDesc`, ..., `GarageCap`, but these observations are more likely to have `ComBldgNo`, ..., `ComNoUnits`. 
+
+```{r}
+lc_data %>% 
+  mutate(isResidential = str_detect(PropertyClassDesc, "Residential"),
+         isCommercial = str_detect(PropertyClassDesc, "Commercial")) %>%
+  slice_sample(prop = .1) %>%
+  arrange(isResidential, isCommercial) %>% 
+vis_miss(cluster = T) 
+```
+
+
+```{r}
+residential_uses <- c("Single Family", "Duplex/Triplex", "Townhouse", 
+                      "Conversion-Apt", "Multi-Family", 
+                      "Mobile Home", "Mobile Home Court", 
+                      "Condo Base Account", "High Rise Condos", "Multi-Use")
+
+residential_properties <- lc_data %>%
+  filter(PrimaryUseDesc %in% residential_uses)
+
+```
+
+
+### Lincoln/Lancaster County Parcel GIS
+
+Parcel-level GIS maps are available at https://maps.lincoln.ne.gov/default/index.html?viewer=GISViewer. These data were systematically downloaded using the draw rectangle tool, and the zip files are in `data/shapefiles/*`. 
+
+```{r}
+library(sf)
+
+shapefile_list <- list.files("data/shapefiles/", full.names = T)
+
+read_zip_sf <- function(file){
+  tmp <- tempdir()
+  unzip(file, exdir = tmp)
+  read_sf(tmp, layer = "Ownership Parcels")
+}
+shapefiles <- purrr::map_df(shapefile_list, read_zip_sf) 
+
+shapefiles <- shapefiles %>% unique()
+
+missing_parcels <- lc_data %>%
+  mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
+  anti_join(shapefiles, by = c("Parcel_ID"= "PARCELID"))
+```
+
+It may make sense to systematically download these, searching via subblock or some other dimension. Doing it manually seems to have missed a significant number of parcels. 
+
+## Data Exploration
