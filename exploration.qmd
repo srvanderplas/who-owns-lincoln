@@ -9,19 +9,22 @@ execute:
 ---
 
 
-```{r}
+```{r setup}
 #| include: false
 
 library(tidyr)
 library(dplyr)
 library(purrr)
 library(ggplot2)
+library(ggmap)
 library(stringr)
 library(readxl)
 library(geojsonio)
 library(DT)
 library(skimr)
 library(naniar)
+library(sf)
+common_proj4string <- "+proj=longlat +datum=WGS84"
 
 ```
 
@@ -52,6 +55,58 @@ geodata <- geojson_sf("data/Existing_Land_Use.geojson")
 ```
 
 This data does not appear to have parcel numbers, so it is not as useful as anticipated.
+
+### Contextual Maps
+
+A map of Nebraska roads was obtained from Nebraska's [open data site](https://www.nebraskamap.gov/datasets/dc69abca3b1a43749dea2141a3544bc9_0/explore) to provide contextual cues for generated maps. 
+
+A map of Nebraska rivers was obtained from the state [open data site](https://www.nebraskamap.gov/datasets/defabeec3a4946c7a0a4fbd279f64e17_0/explore?location=29.038537%2C-77.039422%2C5.50) for additional contextual information. Lakes and other static bodies of water were acquired using [waterbodies data](https://www.nebraskamap.gov/datasets/db03cd43fece4933b8fb9727243a6aa9_0/explore?location=41.974545%2C-100.079057%2C7.07)
+
+A map of [nebraska counties](https://www.nebraskamap.gov/datasets/f8f32ae0dd254524a81477c656e3e469_0/explo.re?location=41.376390%2C-99.634600%2C6.61) was obtained and used to crop the roads and rivers information to Lancaster county in order to save space and allow for upload of the dependent data files to GitHub. 
+
+```{r context-maps}
+ne_counties <- st_read("data/County_Boundaries.geojson") %>%
+  st_transform(common_proj4string)
+
+lancaster <- ne_counties %>%
+  filter(Cnty_Name == "Lancaster")
+
+if (!file.exists("data/lancaster-co-rivers.geojson" | 
+                 !file.exists("data/lancaseter-co-roads.geojson") | 
+                 !file.exists("data/lancaseter-co-lakes.geojson"))) {
+
+  roads <- st_read("data/Highways.geojson") %>%
+    st_transform(common_proj4string)
+  
+  rivers <- st_read("data/River_Areas.geojson") %>%
+    st_transform(common_proj4string)
+  
+  water <- st_read("data/Waterbodies.geojson") %>%
+    st_transform(common_proj4string)
+  
+  
+  county_roads <- roads %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,])
+  county_rivers <- rivers %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,])
+  county_lakes <- water %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,])
+  
+  write_sf(county_rivers, "data/lancaster-co-rivers.geojson")
+  write_sf(county_roads, "data/lancaster-co-roads.geojson")
+  write_sf(county_lakes, "data/lancaster-co-lakes.geojson")
+} else {
+  county_rivers <- st_read("data/lancaster-co-rivers.geojson") %>%
+    st_transform(common_proj4string)
+  county_roads <- st_read("data/lancaster-co-roads.geojson") %>%
+    st_transform(common_proj4string)
+  county_lakes <- st_read("data/lancaster-co-lakes.geojson") %>%
+    st_transform(common_proj4string)
+}
+
+
+```
+
 
 ### Property Assessment Records
 
@@ -105,7 +160,8 @@ residential_uses <- c("Single Family", "Duplex/Triplex", "Townhouse",
                       "Condo Base Account", "High Rise Condos", "Multi-Use")
 
 residential_properties <- lc_data %>%
-  filter(PrimaryUseDesc %in% residential_uses)
+  filter(PrimaryUseDesc %in% residential_uses) %>%
+  rename(PARCELID=Parcel_ID)
 
 ```
 
@@ -115,32 +171,38 @@ residential_properties <- lc_data %>%
 Parcel-level GIS maps are available at https://maps.lincoln.ne.gov/default/index.html?viewer=GISViewer. These data were systematically downloaded using the draw rectangle tool, and the zip files are in `data/shapefiles/*`. 
 
 ```{r}
-library(sf)
+if (!file.exists("data/lincoln-shapes.Rdata")) {
+  shapefile_list <- list.files("data/shapefiles/", full.names = T)
 
-shapefile_list <- list.files("data/shapefiles/", full.names = T)
-
-read_zip_sf <- function(file){
-  tmp <- tempdir()
-  unzip(file, exdir = tmp)
-  res <- try(read_sf(tmp, layer = "Ownership Parcels"))
-  if ("try-error" %in% class(res)) {
-    return(data.frame())
-  } else {
-    return(res)
+  read_zip_sf <- function(file){
+    tmp <- tempdir()
+    unzip(file, exdir = tmp)
+    res <- try(read_sf(tmp, layer = "Ownership Parcels"))
+    if ("try-error" %in% class(res)) {
+      return(data.frame())
+    } else {
+      return(res)
+    }
   }
+  shapefiles <- purrr::map_df(shapefile_list, read_zip_sf) 
+  
+  shapefiles <- shapefiles %>% unique()
+  
+  parcels <- shapefiles %>% st_drop_geometry() %>% unique()
+  # Join shapefiles that have the same parcel ID
+  shapes <- shapefiles %>%
+    select(PARCELID) %>%
+    mutate(geometry = st_make_valid(geometry)) %>%
+    group_by(PARCELID) %>%
+    summarize(geometry = st_union(geometry)) %>%
+    mutate(geometry = st_transform(geometry, common_proj4string)) %>%
+    left_join(parcels)
+  
+  save(shapes, file = "data/lincoln-shapes.Rdata")
+} else {
+  load("data/lincoln-shapes.Rdata")
 }
-shapefiles <- purrr::map_df(shapefile_list, read_zip_sf) 
 
-shapefiles <- shapefiles %>% unique()
-
-parcels <- shapefiles %>% st_drop_geometry() %>% unique()
-# Join shapefiles that have the same parcel ID
-shapes <- shapefiles %>%
-  select(PARCELID) %>%
-  mutate(geometry = st_make_valid(geometry)) %>%
-  group_by(PARCELID) %>%
-  summarize(geometry = st_union(geometry)) %>%
-  left_join(parcels)
 
 missing_parcels <- lc_data %>%
   mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
@@ -151,22 +213,28 @@ lc_data <-  lc_data %>%
   # nest(data = -Parcel_ID) %>%
   left_join(shapes, by = c("Parcel_ID"= "PARCELID"))
 
-missing_residential <- residential_properties %>%
-  mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
-  anti_join(shapes, by = c("Parcel_ID"= "PARCELID"))
-
 residential_properties <- residential_properties %>%
-  left_join(shapes, by = c("Parcel_ID"= "PARCELID"))
+  left_join(shapes)
   
 ```
 
 It may make sense to systematically download any missing files via script, as spot-checks of missing parcels suggest the information is present in the system and may just not be exporting properly. Of the `r nrow(missing_parcels)` missing parcels in the data, `r nrow(missing_residential)` are residential and may potentially affect the analysis.
 
 ```{r}
-missing_parcels %>%
-  mutate(Property_Type = str_extract(PropertyClassDesc, "([A-z]{1,}) ")) %>%
-  select(Parcel_ID, PrimaryUseDesc, Property_Type) %>%
-  ggplot() + geom_sf(aes(geometry, fill = Property_Type))
+tmp <- residential_properties %>%
+  mutate(Property_Type = str_extract(PropertyClassDesc, "([A-z]{1,}) "))
+
+limits <- st_bbox(c(tmp$geometry, lancaster$geometry))
+
+tmp %>%
+  ggplot(aes(geometry = geometry)) +
+  geom_sf(data = ne_counties, color = "black", fill = "transparent") + 
+  geom_sf(data = county_lakes, fill = "blue") + 
+  geom_sf(data = county_rivers, color = "blue") + 
+  geom_sf(data = county_roads, color = "grey") + 
+  coord_sf(xlim = limits[c(1,3)], ylim = limits[c(2,4)]) + 
+  theme_map()
+  geom_sf(aes(fill = Property_Type, color = Property_Type))
 ```
 
 
