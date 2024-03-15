@@ -166,7 +166,6 @@ It may make sense to systematically download any missing files via script, as sp
 missing_parcels %>%
   mutate(Property_Type = str_extract(PropertyClassDesc, "([A-z]{1,}) ")) %>%
   select(Parcel_ID, PrimaryUseDesc, Property_Type) %>%
-  sf() 
   ggplot() + geom_sf(aes(geometry, fill = Property_Type))
 ```
 
