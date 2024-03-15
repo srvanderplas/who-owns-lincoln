@@ -86,7 +86,7 @@ After joining the two data tables to ensure that the maximum information availab
 skim(lc_data)
 ```
 
-Breaking this summary down, we can see associations between variable missingness, which likely occurs due to the difference between residential and commercial properties, assessments, and valuation. Examining this hypothesis with a 10% sample of the data, clustering observations by missingness, we can see that the bottom group of observations is largely missing the assessment information for residential housing, such as `ResTypeDesc`, ..., `GarageCap`, but these observations are more likely to have `ComBldgNo`, ..., `ComNoUnits`. 
+Breaking this summary down, we can see associations between variable missingness, which likely occurs due to the difference between residential and commercial properties, assessments, and valuation. Examining this hypothesis with a 10% sample of the data, clustering observations by missingness, we can see there is a group of observations that is largely missing the assessment information for residential housing, such as `ResTypeDesc`, ..., `GarageCap`, but these observations are more likely to have `ComBldgNo`, ..., `ComNoUnits`; there is also a group which seems to lack both sets of information. 
 
 ```{r}
 lc_data %>% 
@@ -122,17 +122,53 @@ shapefile_list <- list.files("data/shapefiles/", full.names = T)
 read_zip_sf <- function(file){
   tmp <- tempdir()
   unzip(file, exdir = tmp)
-  read_sf(tmp, layer = "Ownership Parcels")
+  res <- try(read_sf(tmp, layer = "Ownership Parcels"))
+  if ("try-error" %in% class(res)) {
+    return(data.frame())
+  } else {
+    return(res)
+  }
 }
 shapefiles <- purrr::map_df(shapefile_list, read_zip_sf) 
 
 shapefiles <- shapefiles %>% unique()
 
+parcels <- shapefiles %>% st_drop_geometry() %>% unique()
+# Join shapefiles that have the same parcel ID
+shapes <- shapefiles %>%
+  select(PARCELID) %>%
+  mutate(geometry = st_make_valid(geometry)) %>%
+  group_by(PARCELID) %>%
+  summarize(geometry = st_union(geometry)) %>%
+  left_join(parcels)
+
 missing_parcels <- lc_data %>%
   mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
-  anti_join(shapefiles, by = c("Parcel_ID"= "PARCELID"))
+  anti_join(shapes, by = c("Parcel_ID"= "PARCELID"))
+
+lc_data <-  lc_data %>%
+  mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
+  # nest(data = -Parcel_ID) %>%
+  left_join(shapes, by = c("Parcel_ID"= "PARCELID"))
+
+missing_residential <- residential_properties %>%
+  mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
+  anti_join(shapes, by = c("Parcel_ID"= "PARCELID"))
+
+residential_properties <- residential_properties %>%
+  left_join(shapes, by = c("Parcel_ID"= "PARCELID"))
+  
 ```
 
-It may make sense to systematically download these, searching via subblock or some other dimension. Doing it manually seems to have missed a significant number of parcels. 
+It may make sense to systematically download any missing files via script, as spot-checks of missing parcels suggest the information is present in the system and may just not be exporting properly. Of the `r nrow(missing_parcels)` missing parcels in the data, `r nrow(missing_residential)` are residential and may potentially affect the analysis.
+
+```{r}
+missing_parcels %>%
+  mutate(Property_Type = str_extract(PropertyClassDesc, "([A-z]{1,}) ")) %>%
+  select(Parcel_ID, PrimaryUseDesc, Property_Type) %>%
+  sf() 
+  ggplot() + geom_sf(aes(geometry, fill = Property_Type))
+```
+
 
 ## Data Exploration
