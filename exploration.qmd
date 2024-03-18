@@ -67,7 +67,7 @@ A map of [nebraska counties](https://www.nebraskamap.gov/datasets/f8f32ae0dd2545
 This information allows us to create a base map, shown below in @fig-context-maps. 
 
 ```{r context-maps}
-#| fig-cap: Base map for the analysis.
+#| fig-cap: Base map for showing analysis results
 #| fig-width: 6
 #| fig-height: 8
 #| out-width: 100%
@@ -95,51 +95,14 @@ if (!file.exists("data/lancaster-co-features.geojson")) {
   roads <- st_read("data/Highways.geojson") %>%
     rename(IDName = HwyLabel, Length = Shape_Length) %>%
     st_transform(common_proj4string)
-  rivers <- st_read("data/River_Areas.geojson") %>%
-    rename(IDName = Permanent_Identifier, Name = GNIS_Name) %>%
-    st_transform(common_proj4string) 
-  water <- st_read("data/Waterbodies.geojson") %>%
-    rename(IDName = Permanent_Identifier, Name = GNIS_Name) %>%
-    st_transform(common_proj4string) 
-  municipal <- st_read("data/Municipal_Points.geojson") %>%
-    rename(ID = FEATURE_ID, IDName = FEATURE_NAME, Class = FEATURE_CLASS, 
-           State = STATE_ALPHA, 
-           County = COUNTY_NAME, COUNTYFP = COUNTY_NUMERIC, 
-           Label_LAT = PRIM_LAT_DEC, Label_LON = PRIM_LONG_DEC, 
-           Elevation = ELEV_IN_FT) %>%
-    select(-ends_with("DMS"), -ELEV_IN_M) %>%
-    st_transform(common_proj4string) 
-  municipal_boundaries <- st_read("data/Municipal_Boundaries.geojson") %>%
-    rename(ID = GEOID, IDName = NAME, Class = CLASSFP,
-           Label_LON = INTPTLON, Label_LAT = INTPTLAT) %>%
-    select(-PCICBSA:AWATER) %>%
-    mutate(across(matches("Label"), as.numeric)) %>%
-    st_transform(common_proj4string) 
-  
-  county_points <- municipal %>%
-    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) 
-  county_rivers <- rivers %>%
-    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
-    st_crop(., county_bbox) %>%
-    st_make_valid()
-  county_lakes <- water %>%
-    filter(AreaSqKm>0.1) %>%
-    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
-    st_crop(., county_bbox) %>%
-    st_make_valid()
-    # filter(st_is_valid(.))
-  municipal_boundaries <- st_read("data/Municipal_Boundaries.geojson") %>%
-    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
-    st_make_valid()
-  
   # Crop to bounding box, then subtract off roads within the county (covered by streets)
   county_roads <- roads %>%
     filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
     st_crop(., county_bbox) %>%
     st_make_valid() %>%
     select(IDName, HwyType, geometry) %>%
-    st_transform(common_proj4string) 
-  county_roads <- st_difference(county_roads, lancaster$geometry)
+    st_transform(common_proj4string) %>%
+    st_difference(lancaster$geometry)
   
   streets <- st_read("data/Streets.geojson") %>%
     filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
@@ -151,6 +114,48 @@ if (!file.exists("data/lancaster-co-features.geojson")) {
             fMajorRoadType = table(fMajorRoadType, useNA = 'ifany') %>% sort(decreasing = T) %>% names() %>% `[`(1)) %>%
     filter(LENGTH_MI > 1) %>%
     rename(IDName = STNAME)
+  
+  
+  rivers <- st_read("data/River_Areas.geojson") %>%
+    rename(IDName = Permanent_Identifier, Name = GNIS_Name) %>%
+    st_transform(common_proj4string) 
+  
+  county_rivers <- rivers %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
+    st_crop(., county_bbox) %>%
+    st_make_valid()
+  
+  water <- st_read("data/Waterbodies.geojson") %>%
+    rename(IDName = Permanent_Identifier, Name = GNIS_Name) %>%
+    st_transform(common_proj4string) 
+  
+  county_lakes <- water %>%
+    filter(AreaSqKm>0.1) %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
+    st_crop(., county_bbox) %>%
+    st_make_valid()
+  
+  municipal <- st_read("data/Municipal_Points.geojson") %>%
+    rename(ID = FEATURE_ID, IDName = FEATURE_NAME, Class = FEATURE_CLASS, 
+           State = STATE_ALPHA, 
+           County = COUNTY_NAME, COUNTYFP = COUNTY_NUMERIC, 
+           Label_LAT = PRIM_LAT_DEC, Label_LON = PRIM_LONG_DEC, 
+           Elevation = ELEV_IN_FT) %>%
+    select(-ends_with("DMS"), -ELEV_IN_M) %>%
+    st_transform(common_proj4string) 
+  county_points <- municipal %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) 
+  
+
+  municipal_boundaries <- st_read("data/Municipal_Boundaries.geojson") %>%
+    rename(ID = GEOID, IDName = NAME, Class = CLASSFP,
+           Label_LON = INTPTLON, Label_LAT = INTPTLAT) %>%
+    select(-PCICBSA:AWATER) %>%
+    mutate(across(matches("Label"), as.numeric)) %>%
+    st_transform(common_proj4string) %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = F)[1,])
+  
+
     
   county_features <- bind_rows(
     mutate(county_rivers, type = "river"),
@@ -164,10 +169,6 @@ if (!file.exists("data/lancaster-co-features.geojson")) {
     select(-c(ReachCode, STATEFP, PLACEFP, PLACENS, LSAD, PCICBSA, PCINECTA, MTFCC, FUNCSTAT, ALAND, AWATER, Cnty_No)) %>%
     mutate(OBJECTID = if_else(is.na(OBJECTID), max(OBJECTID, na.rm = T) + 1:n(), OBJECTID))
   
-  # write_sf(county_rivers, "data/lancaster-co-rivers.geojson", delete_dsn = TRUE)
-  # write_sf(county_roads, "data/lancaster-co-roads.geojson", delete_dsn = TRUE)
-  # write_sf(county_lakes, "data/lancaster-co-lakes.geojson", delete_dsn = TRUE)
-  # write_sf(county_points, "data/lancaster-co-points.geojson", delete_dsn = TRUE)
   write_sf(county_features, "data/lancaster-co-features.geojson", delete_dsn = T)
   
 } else {
@@ -175,11 +176,6 @@ if (!file.exists("data/lancaster-co-features.geojson")) {
     st_transform(common_proj4string)
 }
   
-# This is annoying - to use aesthetics to show the data we care about, we 
-# need to actually *not* use aesthetics here. Which makes aggregating all of the
-# data above and specifying the aesthetics in the data frame a waste of time...
-# but changing it back would also be a waste of time. So onward.
-
 basemap <- ggplot() +
   theme_map() + 
   ggtitle("Lancaster County, NE") + 
@@ -194,7 +190,7 @@ basemap <- ggplot() +
   geom_sf(data = filter(county_features, type == "municipal"), 
           color = "grey50", fill = "grey50", alpha = .125) + 
   geom_sf_text(data = filter(county_features, type == "municipal"), 
-               aes(label = NAME), 
+               aes(label = IDName), 
                size = 2, nudge_y = 0.01, nudge_x = 0.01)
 
 basemap
@@ -236,11 +232,11 @@ skim(lc_data)
 
 Breaking this summary down, we can see associations between variable missingness, which likely occurs due to the difference between residential and commercial properties, assessments, and valuation. Examining this hypothesis with a 10% sample of the data, clustering observations by missingness, we can see there is a group of observations that is largely missing the assessment information for residential housing, such as `ResTypeDesc`, ..., `GarageCap`, but these observations are more likely to have `ComBldgNo`, ..., `ComNoUnits`; there is also a group which seems to lack both sets of information. 
 
-```{r}
+```{r, eval = F}
 lc_data %>% 
   mutate(isResidential = str_detect(PropertyClassDesc, "Residential"),
          isCommercial = str_detect(PropertyClassDesc, "Commercial")) %>%
-  slice_sample(prop = .1) %>%
+  slice_sample(prop = .05) %>%
   arrange(isResidential, isCommercial) %>% 
 vis_miss(cluster = T) 
 ```
@@ -286,14 +282,14 @@ if (!file.exists("data/lincoln-shapes.Rdata")) {
 missing_parcels <- lc_data %>%
   mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
   separate(PropertyClassDesc, c("PropertyClass", "PropertyClassStatus"), remove = F)  %>%
-  anti_join(shapes, by = c("Parcel_ID"= "PARCELID"))
+  anti_join(shapes, by = c("Parcel_ID"= "PARCELID", "SitusAddress" = "SITEADDRES"))
 
-lc_data <-  lc_data %>%
+property_data <-  lc_data %>%
   mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
   separate(PropertyClassDesc, c("PropertyClass", "PropertyClassStatus"), remove = F)  %>%
-  left_join(shapes, by = c("Parcel_ID"= "PARCELID"))
+  left_join(shapes, by = c("Parcel_ID"= "PARCELID", "SitusAddress" = "SITEADDRES"))
 
-map_data <- lc_data %>%
+map_data <- property_data %>%
   select(Parcel_ID, PropertyClass, PropertyClassStatus, Owner, Own_City, Own_State, ResTypeDesc, ImpType, Foundation, geometry)
   
   
@@ -302,7 +298,11 @@ map_data <- lc_data %>%
 It may make sense to systematically download any missing files via script, as spot-checks of missing parcels suggest the information is present in the system and may just not be exporting properly. Of the `r nrow(missing_parcels)` missing parcels in the data, `r filter(missing_parcels, PropertyClass == "Residential") %>% nrow()` are residential and may potentially affect the analysis.
 
 ```{r}
-#| fig-cap: Map of property class type, for properties with corresponding spatial regions in the database. There are `r nrow(residential_properties)` in the overall dataset; `r nrow(missing_parcels)` of these properties do not have corresponding spatial information, and of those missing spatial information, `r filter(missing_parcels, PropertyClass == "Residential") %>% nrow()` are residential. 
+#| label: land-use-map
+#| fig-cap: "Map of property class type, for properties with corresponding spatial regions in the database. There are `r nrow(residential_properties)` in the overall dataset; `r nrow(missing_parcels)` of these properties do not have corresponding spatial information, and of those missing spatial information, `r filter(missing_parcels, PropertyClass == 'Residential') %>% nrow()` are residential."
+#| fig-width: 6
+#| fig-height: 8
+#| cache: true
 
 prop_type_pal <- c(Residential = "#8EB8E5", Commercial = "#272932", Ag = "#CAFFB9")
 basemap + 
@@ -315,4 +315,106 @@ basemap +
 ```
 
 
-## Data Exploration
+## Primary Question: Who Owns Lincoln?
+
+In order to promote action on housing affordability in Lancaster County, it is important to understand who the players are: to build consensus, we will need cooperation between government entities, landlords, and tenants. Right now, it is the landlords who are the unknown quantity: are most units in Lancaster county owned by small-time landlords with 1-3 single units or duplexes? Or is the rental space dominated primarily by large, out of state investment companies?
+
+All sources of data at the county level will be incomplete in some way: the property tax data does not indicate whether a home is used as a rental property or is owner-occupied. Large landlords may be more likely to have properties which are registered with the city housing authority, but this is not a guarantee. 
+
+
+### Property Tax Data
+
+The property tax data includes the owner's address as well as the site address; it stands to reason that if the owner occupies the premises, the owner's address will match the site address. 
+Not all entries have a site address, however, most entries without a site address are unimproved properties, as shown in @fig-missing-site-addr-summary. 
+Unimproved properties do not have buildings and thus most likely do not contain current residents, and so, for the purposes of this analysis, we can ignore these properties. 
+
+```{r}
+#| label: missing-site-addr-summary
+#| fig-cap: Assessment of missing site addresses. While there are missing/unassigned addresses across all categories, missing addresses are primarily found in unimproved properties, which are unlikely to have residents.  IOLL is an acronym for 'improvement on leased land', where the renter adds an improvement, such as a building or shed, and the renter is taxed for the improvement while the landowner pays taxes on the land separately. 
+
+has_site_addr_summary <- property_data %>%
+  mutate(has_site_addr = !is.na(SitusAddress)) %>%
+  group_by(PropertyClass, PropertyClassStatus, has_site_addr) %>%
+  summarize(count = n()) %>%
+  ungroup()
+
+ggplot(has_site_addr_summary, aes(x = PropertyClass, color = PropertyClassStatus, fill = PropertyClassStatus, alpha = has_site_addr, y = count)) + 
+  geom_col() + 
+  scale_color_discrete("Property Status") + 
+  scale_fill_discrete("Property Status") + 
+  scale_alpha_manual("Site Address", values = c(.5, 1)) + 
+  ggtitle("Property Address Listed") + 
+  ylab("# Properties") + 
+  xlab("Property Type")
+# table(property_data$PropertyClassDesc, is.na(property_data$SitusAddress), useNA = 'ifany')
+```
+
+```{r}
+#| label: missing-site-addr-table
+#| fig-cap: Assessment of impact of missing site addresses for Improved/IOLL properties.
+tmp <- has_site_addr_summary %>% filter(PropertyClassStatus != "Unimproved") %>%
+  mutate(has_site_addr = c("No Address", "Site Address")[has_site_addr+1]) %>%
+  pivot_wider(names_from = has_site_addr, values_from = count)
+tmp %>%
+  bind_rows(tibble(PropertyClass = "Total", PropertyClassStatus = "Total", as_tibble(t(colSums(tmp[,3:4]))))) %>%
+  DT::datatable(rownames = F, caption = "Improved and IOLL properties with no address make up less than 1% of all properties in the database.")
+```
+
+This analysis proceeds ignoring unimproved properties and with the assumption that properties without a specified address are a relatively small contribution to the overall analysis. In addition, as acreages are typically classed as residential properties even when in agricultural areas, we will remove agricultural areas from the remainder of the analysis unless they are classed as acreages. 
+Not all commercial buildings will be apartments; of the commercial building classifications in the data set, the following appear to be "residential" or at least partially residential in nature:
+
+- 01-Apartment
+- 02-Student Apartment
+- 03-Senior and Community Living
+- 04-Hotel/Motel
+- 29-Residence on Commercial Account
+- 50-Fraternity House
+- 51-Nursing Home
+- 58-Apt over Commercial
+- 63-Community Living
+- 90-Mobile Home Courts
+
+Restricting commercial properties to these classifications, we have the following breakdown of owner-occupied and not-owner-occupied buildings. While this data still includes properties without a site address, these are a tiny fraction of the overall data.
+
+```{r}
+#| label: owner-occupied-summary
+#| fig-cap: Assessment of whether properties are owner-occupied, based on whether the owner's address matches (or partially matches) the site address. NA values occur when no site address is present in the data, likely because an official mailing address has not been assigned for the parcel.  
+
+property_data <- property_data %>%
+  filter(PropertyClassStatus != "Unimproved") %>%
+  filter(PropertyClass %in% "Residential" | PrimaryUseDesc == "Acreage" | str_detect(ComBldgTypeDesc, "01|02|03|04|29|50|51|58|63|90")) %>%
+  mutate(own_occupied = str_detect(fixed(SitusAddress), fixed(Own_Address1)))
+
+owner_occupied_summary <- property_data %>%
+  group_by(PropertyClass, own_occupied) %>%
+  reframe(count = n()) %>%
+  group_by(PropertyClass) %>%
+  mutate(prop = count/sum(count))
+
+ggplot(owner_occupied_summary, aes(x = own_occupied, fill = PropertyClass, y = count)) + 
+  geom_col() + 
+  ggtitle("Owner and Property Address Correspondance") + 
+  ylab("Proportion of Properties") + 
+  xlab("Owner Occupied") + 
+  scale_fill_discrete("Property Type")
+```
+
+
+```{r}
+#| label: owner-occupied-map
+#| fig-cap: Map of owner-occupied properties in Lancaster county. Properties which are commercial and do not involve housing (e.g. retail, industry) and agricultural properties that are not listed as acreages are excluded from this map.
+
+basemap + 
+  geom_sf(data = property_data, 
+          aes(geometry = geometry, fill = own_occupied, color = own_occupied), alpha = .5) + 
+  theme(legend.position = "left")
+
+```
+
+
+## Definitions
+
+Some of the acronyms used by various government organizations are not necessarily well defined within the data set documentation.
+
+- IOLL is an acronym meaning 'Improvements on Leased Land', which are taxed separately from the land itself, as the owner of the improvement is different than the owner of the land itself. [Source](https://revenue.nebraska.gov/sites/revenue.nebraska.gov/files/doc/pad/forms/402_Improvements_on_Leased_Land.pdf)
+
