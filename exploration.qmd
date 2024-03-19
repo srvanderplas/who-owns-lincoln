@@ -6,11 +6,13 @@ execute:
   echo: false
   message: false
   warning: false
+  out-width: 100%
 ---
 
 
 ```{r setup}
 #| include: false
+#| cache: false
 
 library(tidyr)
 library(dplyr)
@@ -299,7 +301,7 @@ It may make sense to systematically download any missing files via script, as sp
 
 ```{r}
 #| label: land-use-map
-#| fig-cap: "Map of property class type, for properties with corresponding spatial regions in the database. There are `r nrow(residential_properties)` in the overall dataset; `r nrow(missing_parcels)` of these properties do not have corresponding spatial information, and of those missing spatial information, `r filter(missing_parcels, PropertyClass == 'Residential') %>% nrow()` are residential."
+#| fig-cap: "Map of property class type, for properties with corresponding spatial regions in the database."
 #| fig-width: 6
 #| fig-height: 8
 #| cache: true
@@ -403,6 +405,8 @@ ggplot(owner_occupied_summary, aes(x = own_occupied, fill = PropertyClass, y = c
 ```{r}
 #| label: owner-occupied-map
 #| fig-cap: Map of owner-occupied properties in Lancaster county. Properties which are commercial and do not involve housing (e.g. retail, industry) and agricultural properties that are not listed as acreages are excluded from this map.
+#| fig-width: 6
+#| fig-height: 8
 
 basemap + 
   geom_sf(data = property_data, 
