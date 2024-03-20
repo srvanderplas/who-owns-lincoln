@@ -411,9 +411,45 @@ ggplot(owner_occupied_summary, aes(x = own_occupied, fill = PropertyClass, y = c
 basemap + 
   geom_sf(data = property_data, 
           aes(geometry = geometry, fill = own_occupied, color = own_occupied), alpha = .5) + 
-  theme(legend.position = "left")
+  theme(legend.position = "left") +
+  ggtitle("Residential Buildings in Lancaster County, NE")
 
 ```
+
+
+## Exploring Owner Types
+
+One interesting facet of this data is that properties can be owned by many different types of entities - individuals, LLCs, incorporated companies, life estates, and trusts, among others. 
+While it is certainly possible for a house to be owned by a trust and not rented out (e.g. for estate planning purposes), it seems reasonable to develop a variable indicating whether residential properties are owned by an individual entity or not. To do this, we will flag any property where the Owner name includes " INC", " LLC", " Trust", " Estate", "authority", "Rem Int" (remaining interest, e.g. inherits after death of occupant), or "corporation". 
+
+```{r}
+#| label: owner-investment-summary
+#| fig-cap: Assessment of whether properties are owned by commercial/legal entities, such as corporations, LLCs, companies, or trust/estate vehicles. 
+
+property_data <- property_data %>%
+  mutate(own_investment = str_detect(str_to_upper(Owner), "\\W(INC|LLC|TRUST|ESTATE|CORPORATION|COMPANY|LLP|REM|INT|AUTHORITY)"))
+
+own_investment_summary <- property_data %>%
+  group_by(PropertyClass, own_investment, own_occupied) %>%
+  filter(!is.na(own_occupied)) %>%
+  mutate(own_occupied = if_else(own_occupied, "Owner Occupant", "Other Occupant"),
+         own_investment = if_else(own_investment, "Investment", "Single Owner")) %>%
+  reframe(count = n())
+
+ggplot(own_investment_summary, aes(x = own_investment, color = PropertyClass, fill = PropertyClass, y = count, alpha = own_occupied)) + 
+  # facet_wrap(~own_occupied) + 
+  geom_col() + 
+  scale_alpha_discrete("Occupant", c(.5, 1)) + 
+  ggtitle("Investment Indicators and Property Address Correspondance") + 
+  xlab("Investment Ownership") + 
+  scale_fill_discrete("Property Type") + 
+  scale_color_discrete("Property Type")
+```
+
+While it is certainly more likely that a property owned by an investment entity will be occupied by someone other than the owner, it is not a guarantee; there are a reasonable number of e.g. life estate/estate planning solutions that result in the owner occupying the premises.
+
+
+
 
 
 ## Definitions
