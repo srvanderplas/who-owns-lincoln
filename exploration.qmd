@@ -68,11 +68,8 @@ A map of [nebraska counties](https://www.nebraskamap.gov/datasets/f8f32ae0dd2545
 
 This information allows us to create a base map, shown below in @fig-context-maps.
 
-```{r context-maps}
-#| fig-cap: Base map for showing analysis results
-#| fig-width: 6
-#| fig-height: 8
-#| out-width: 100%
+```{r data-setup}
+
 
 ne_counties <- st_read("data/County_Boundaries.geojson") %>%
   st_transform(common_proj4string)
@@ -177,7 +174,14 @@ if (!file.exists("data/lancaster-co-features.geojson")) {
   county_features <- st_read("data/lancaster-co-features.geojson") %>%
     st_transform(common_proj4string)
 }
+```
 
+```{r context-maps}
+#| fig-cap: Base map for showing analysis results
+#| fig-width: 6
+#| fig-height: 8
+#| out-width: 100%
+#| cache: true
 basemap <- ggplot() +
   theme_map() +
   ggtitle("Lancaster County, NE") +
@@ -247,7 +251,7 @@ vis_miss(cluster = T)
 
 Parcel-level GIS maps are available at https://maps.lincoln.ne.gov/default/index.html?viewer=GISViewer. These data were systematically downloaded using the draw rectangle tool, and the zip files are in `data/shapefiles/*`.
 
-```{r}
+```{r shapefile-processing}
 if (!file.exists("data/lincoln-shapes.Rdata")) {
   shapefile_list <- list.files("data/shapefiles/", full.names = T)
 
@@ -280,7 +284,6 @@ if (!file.exists("data/lincoln-shapes.Rdata")) {
   load("data/lincoln-shapes.Rdata")
 }
 
-
 missing_parcels <- lc_data %>%
   mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
   separate(PropertyClassDesc, c("PropertyClass", "PropertyClassStatus"), remove = F)  %>%
@@ -293,8 +296,6 @@ property_data <-  lc_data %>%
 
 map_data <- property_data %>%
   select(Parcel_ID, PropertyClass, PropertyClassStatus, Owner, Own_City, Own_State, ResTypeDesc, ImpType, Foundation, geometry)
-
-
 ```
 
 It may make sense to systematically download any missing files via script, as spot-checks of missing parcels suggest the information is present in the system and may just not be exporting properly. Of the `r nrow(missing_parcels)` missing parcels in the data, `r filter(missing_parcels, PropertyClass == "Residential") %>% nrow()` are residential and may potentially affect the analysis.
@@ -407,6 +408,8 @@ ggplot(owner_occupied_summary, aes(x = own_occupied, fill = PropertyClass, y = c
 #| fig-cap: Map of owner-occupied properties in Lancaster county. Properties which are commercial and do not involve housing (e.g. retail, industry) and agricultural properties that are not listed as acreages are excluded from this map.
 #| fig-width: 6
 #| fig-height: 8
+#| cache: true
+
 
 basemap +
   geom_sf(data = property_data,
@@ -483,7 +486,7 @@ owner_info <- property_data %>%
 
 save(owner_info, file = "data/owner_info.Rdata")
 
-ggplot(owner_info, aes(x = n_own_properties)) + geom_histogram() + scale_x_log10()
+ggplot(owner_info, aes(x = n_own_properties)) + geom_histogram() + scale_x_log10() + scale_y_log10()
 ```
 
 
