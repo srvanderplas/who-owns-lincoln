@@ -478,12 +478,12 @@ owner_info <- property_data %>%
     weighted_no_units = if_else(is.na(ComNoUnits), weight, weight*ComNoUnits),
     n_own_properties = sum(weight),
     n_own_units = sum(weighted_no_units)) %>%
-  nest(property = -c(starts_with("Own", n_own_properties, n_own_units)) %>%
+  nest(property = -c(starts_with("Own"), n_own_properties, n_own_units)) %>%
   ungroup()
 
 save(owner_info, file = "data/owner_info.Rdata")
 
-ggplot(owner_info, aes(x = n_own_properties)) + geom_histogram()
+ggplot(owner_info, aes(x = n_own_properties)) + geom_histogram() + scale_x_log10()
 ```
 
 
