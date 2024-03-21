@@ -1,7 +1,7 @@
 ---
 title: "Who Owns Lincoln? Exploring Lancaster County Property Tax Records"
 format: html
-execute: 
+execute:
   cache: true
   echo: false
   message: false
@@ -27,14 +27,14 @@ library(skimr)
 library(naniar)
 library(sf)
 common_proj4string <- "+proj=longlat +datum=WGS84"
-
+ggplot2::theme_set(theme_bw())
 ```
 
 Justice in Action adopted a 3rd advocacy area in 2023 - Affordable housing. One of the most promising areas to tackle is the application fee/background check fee, which must be paid to each landlord with no guarantee of acceptance and no refunds. In order to propose a more just system, Justice in Action needs to understand who might be affected by different proposed solutions - in other words, who owns rental housing in Lincoln?
 
-There are several potential avenues for public data which might help answer this question: 
+There are several potential avenues for public data which might help answer this question:
 
-- property tax/assessment records, 
+- property tax/assessment records,
 - rental registration records,
 
 
@@ -43,14 +43,14 @@ Of primary interest is to determine whether housing is owned by:
 - LLCs or individuals
 - in-state vs. out-of-state owners
 
-In addition, it would be good to figure out how many units each owner operates (potentially) to assess the feasibility of working with e.g. the largest N landlords who own 80% or more of housing in Lincoln. 
+In addition, it would be good to figure out how many units each owner operates (potentially) to assess the feasibility of working with e.g. the largest N landlords who own 80% or more of housing in Lincoln.
 
 
 ## Data Acquisition
 
 ### Land Use Map
 
-A land use geojson file was obtained from Lincoln's open data site ([link](https://opendata.lincoln.ne.gov/datasets/9f1248c80d9a41caa55da937ad002d86_1)). 
+A land use geojson file was obtained from Lincoln's open data site ([link](https://opendata.lincoln.ne.gov/datasets/9f1248c80d9a41caa55da937ad002d86_1)).
 
 ```{r}
 # geodata <- geojson_sf("data/Existing_Land_Use.geojson")
@@ -66,7 +66,7 @@ A map of Nebraska rivers was obtained from the state [open data site](https://ww
 
 A map of [nebraska counties](https://www.nebraskamap.gov/datasets/f8f32ae0dd254524a81477c656e3e469_0/explo.re?location=41.376390%2C-99.634600%2C6.61) was obtained and used to crop the roads and rivers information to Lancaster county in order to save space and allow for upload of the dependent data files to GitHub. Municipal boundaries were sourced from [state records](https://www.nebraskamap.gov/datasets/ecc5102303b948aea73b0b4ebcce66b0_0/explore) and added for additional context.
 
-This information allows us to create a base map, shown below in @fig-context-maps. 
+This information allows us to create a base map, shown below in @fig-context-maps.
 
 ```{r context-maps}
 #| fig-cap: Base map for showing analysis results
@@ -81,10 +81,10 @@ lancaster <- ne_counties %>%
   filter(Cnty_Name == "Lancaster") %>%
   st_transform(common_proj4string)
 
-county_bbox <- st_bbox(lancaster) * c(1.00065, 0.99935, 0.99935, 1.00065) 
+county_bbox <- st_bbox(lancaster) * c(1.00065, 0.99935, 0.99935, 1.00065)
 county_bbox <- st_as_sfc(county_bbox) %>%
   st_transform(common_proj4string)
-ne_counties_crop <- ne_counties %>% 
+ne_counties_crop <- ne_counties %>%
   filter(st_intersects(county_bbox, sparse = F)[1,])
 
 ne_counties_crop <- st_crop(ne_counties, county_bbox) %>%
@@ -105,49 +105,49 @@ if (!file.exists("data/lancaster-co-features.geojson")) {
     select(IDName, HwyType, geometry) %>%
     st_transform(common_proj4string) %>%
     st_difference(lancaster$geometry)
-  
+
   streets <- st_read("data/Streets.geojson") %>%
     filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
     st_make_valid() %>%
-    select(STNAME, STPRE, STTYPE, SPEEDLIM, LENGTH_MI, 
+    select(STNAME, STPRE, STTYPE, SPEEDLIM, LENGTH_MI,
            matches("Walk"), matches("Drive"), fMajorRoadType, OnStreetBike) %>%
     group_by(STNAME, STPRE, STTYPE) %>%
-    reframe(geometry = st_union(geometry), SPEEDLIM = mean(SPEEDLIM), LENGTH_MI = sum(LENGTH_MI), 
+    reframe(geometry = st_union(geometry), SPEEDLIM = mean(SPEEDLIM), LENGTH_MI = sum(LENGTH_MI),
             fMajorRoadType = table(fMajorRoadType, useNA = 'ifany') %>% sort(decreasing = T) %>% names() %>% `[`(1)) %>%
     filter(LENGTH_MI > 1) %>%
     rename(IDName = STNAME)
-  
-  
+
+
   rivers <- st_read("data/River_Areas.geojson") %>%
     rename(IDName = Permanent_Identifier, Name = GNIS_Name) %>%
-    st_transform(common_proj4string) 
-  
+    st_transform(common_proj4string)
+
   county_rivers <- rivers %>%
     filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
     st_crop(., county_bbox) %>%
     st_make_valid()
-  
+
   water <- st_read("data/Waterbodies.geojson") %>%
     rename(IDName = Permanent_Identifier, Name = GNIS_Name) %>%
-    st_transform(common_proj4string) 
-  
+    st_transform(common_proj4string)
+
   county_lakes <- water %>%
     filter(AreaSqKm>0.1) %>%
     filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
     st_crop(., county_bbox) %>%
     st_make_valid()
-  
+
   municipal <- st_read("data/Municipal_Points.geojson") %>%
-    rename(ID = FEATURE_ID, IDName = FEATURE_NAME, Class = FEATURE_CLASS, 
-           State = STATE_ALPHA, 
-           County = COUNTY_NAME, COUNTYFP = COUNTY_NUMERIC, 
-           Label_LAT = PRIM_LAT_DEC, Label_LON = PRIM_LONG_DEC, 
+    rename(ID = FEATURE_ID, IDName = FEATURE_NAME, Class = FEATURE_CLASS,
+           State = STATE_ALPHA,
+           County = COUNTY_NAME, COUNTYFP = COUNTY_NUMERIC,
+           Label_LAT = PRIM_LAT_DEC, Label_LON = PRIM_LONG_DEC,
            Elevation = ELEV_IN_FT) %>%
     select(-ends_with("DMS"), -ELEV_IN_M) %>%
-    st_transform(common_proj4string) 
+    st_transform(common_proj4string)
   county_points <- municipal %>%
-    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) 
-  
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,])
+
 
   municipal_boundaries <- st_read("data/Municipal_Boundaries.geojson") %>%
     rename(ID = GEOID, IDName = NAME, Class = CLASSFP,
@@ -156,9 +156,9 @@ if (!file.exists("data/lancaster-co-features.geojson")) {
     mutate(across(matches("Label"), as.numeric)) %>%
     st_transform(common_proj4string) %>%
     filter(st_intersects(lancaster$geometry[[1]], ., sparse = F)[1,])
-  
 
-    
+
+
   county_features <- bind_rows(
     mutate(county_rivers, type = "river"),
     mutate(county_lakes, type = "lakes"),
@@ -170,29 +170,29 @@ if (!file.exists("data/lancaster-co-features.geojson")) {
     filter(st_is_valid(.)) %>%
     select(-c(ReachCode, STATEFP, PLACEFP, PLACENS, LSAD, PCICBSA, PCINECTA, MTFCC, FUNCSTAT, ALAND, AWATER, Cnty_No)) %>%
     mutate(OBJECTID = if_else(is.na(OBJECTID), max(OBJECTID, na.rm = T) + 1:n(), OBJECTID))
-  
+
   write_sf(county_features, "data/lancaster-co-features.geojson", delete_dsn = T)
-  
+
 } else {
   county_features <- st_read("data/lancaster-co-features.geojson") %>%
     st_transform(common_proj4string)
 }
-  
+
 basemap <- ggplot() +
-  theme_map() + 
-  ggtitle("Lancaster County, NE") + 
-  geom_sf(data = filter(county_features, type == "county" & IDName != "Lancaster"), 
-          fill = "grey80", alpha = 0.5) + 
-  geom_sf(data = filter(county_features, type == "river"), 
-          color = "blue", alpha = .5) + 
-  geom_sf(data = filter(county_features, type == "lakes"), 
-          color = "blue", fill = "blue", alpha = .5) + 
-  geom_sf(data = filter(county_features, type == "roads"), 
-          color = "grey50", alpha = .25) + 
-  geom_sf(data = filter(county_features, type == "municipal"), 
-          color = "grey50", fill = "grey50", alpha = .125) + 
-  geom_sf_text(data = filter(county_features, type == "municipal"), 
-               aes(label = IDName), 
+  theme_map() +
+  ggtitle("Lancaster County, NE") +
+  geom_sf(data = filter(county_features, type == "county" & IDName != "Lancaster"),
+          fill = "grey80", alpha = 0.5) +
+  geom_sf(data = filter(county_features, type == "river"),
+          color = "blue", alpha = .5) +
+  geom_sf(data = filter(county_features, type == "lakes"),
+          color = "blue", fill = "blue", alpha = .5) +
+  geom_sf(data = filter(county_features, type == "roads"),
+          color = "grey50", alpha = .25) +
+  geom_sf(data = filter(county_features, type == "municipal"),
+          color = "grey50", fill = "grey50", alpha = .125) +
+  geom_sf_text(data = filter(county_features, type == "municipal"),
+               aes(label = IDName),
                size = 2, nudge_y = 0.01, nudge_x = 0.01)
 
 basemap
@@ -201,7 +201,7 @@ basemap
 
 ### Property Assessment Records
 
-Two xlsx files were acquired from Doug R. Guess of the Lancaster County GIS office on 2024-03-13; the total cost of the database search was $60 (+ $2 processing fee). The information is publicly available at https://app.lincoln.ne.gov/aspx/cnty/cto/, but assembling the full dataset would require assembling data from approximately `r 26^3` queries; it was deemed reasonable to pay for the data rather than assemble it manually. 
+Two xlsx files were acquired from Doug R. Guess of the Lancaster County GIS office on 2024-03-13; the total cost of the database search was $60 (+ $2 processing fee). The information is publicly available at https://app.lincoln.ne.gov/aspx/cnty/cto/, but assembling the full dataset would require assembling data from approximately `r 26^3` queries; it was deemed reasonable to pay for the data rather than assemble it manually.
 
 ```{r}
 lc_data1 <- read_xlsx("data/SusanVanderPlas.xlsx")
@@ -211,12 +211,12 @@ lc_data2 <- read_xlsx("data/SusanVanderPlas-New.xlsx")
 - data/SusanVanderplas.xlsx contains `r nrow(lc_data1)` rows and `r nrow(lc_data1)` columns, including the following columns not present in the initial data file: `r paste(setdiff(names(lc_data1), names(lc_data2)), collapse = ", ")`
 - data/SusanVanderplas-New.xlsx contains `r nrow(lc_data2)` rows and `r nrow(lc_data2)` columns, including the following columns not present in the initial data file: `r paste(setdiff(names(lc_data2), names(lc_data1)), collapse = ", ")`
 
-Further analysis shows that 
+Further analysis shows that
 
 - `PrimeUseDesc` and `PrimaryUseDesc` have the same 28 levels (and are thus most likely duplicated columns)
 - `Prop_ClassDesc` and `PropertyClassDesc` have the same 8 levels
 
-Joining the two datasets on common variables allowed verification that (`TotalAcres`, `Total_Acres`) and (`SitusAddress`, `Situs`) contain the same information. In addition, joining the two datasets on all variables did not produce any non-matching rows, indicating that `data/SusanVanderPlas.xlsx` contains a subset of the data present in `data/SusanVanderPlas-New.xlsx`. 
+Joining the two datasets on common variables allowed verification that (`TotalAcres`, `Total_Acres`) and (`SitusAddress`, `Situs`) contain the same information. In addition, joining the two datasets on all variables did not produce any non-matching rows, indicating that `data/SusanVanderPlas.xlsx` contains a subset of the data present in `data/SusanVanderPlas-New.xlsx`.
 What is curious is that `data/SusanVanderPlas-New.xlsx` contains more rows and columns than `data/SusanVanderplas.xlsx` but takes up approximately 0.3 MB less space on disk.
 
 ```{r}
@@ -226,26 +226,26 @@ lc_data <- full_join(lc_data1_fix, lc_data2)
 rm(lc_data1_fix, lc_data1, lc_data2)
 ```
 
-After joining the two data tables to ensure that the maximum information available is analyzed, there are `r nrow(lc_data)` records with `r ncol(lc_data)` available variables. 
+After joining the two data tables to ensure that the maximum information available is analyzed, there are `r nrow(lc_data)` records with `r ncol(lc_data)` available variables.
 
 ```{r}
 skim(lc_data)
 ```
 
-Breaking this summary down, we can see associations between variable missingness, which likely occurs due to the difference between residential and commercial properties, assessments, and valuation. Examining this hypothesis with a 10% sample of the data, clustering observations by missingness, we can see there is a group of observations that is largely missing the assessment information for residential housing, such as `ResTypeDesc`, ..., `GarageCap`, but these observations are more likely to have `ComBldgNo`, ..., `ComNoUnits`; there is also a group which seems to lack both sets of information. 
+Breaking this summary down, we can see associations between variable missingness, which likely occurs due to the difference between residential and commercial properties, assessments, and valuation. Examining this hypothesis with a 10% sample of the data, clustering observations by missingness, we can see there is a group of observations that is largely missing the assessment information for residential housing, such as `ResTypeDesc`, ..., `GarageCap`, but these observations are more likely to have `ComBldgNo`, ..., `ComNoUnits`; there is also a group which seems to lack both sets of information.
 
 ```{r, eval = F}
-lc_data %>% 
+lc_data %>%
   mutate(isResidential = str_detect(PropertyClassDesc, "Residential"),
          isCommercial = str_detect(PropertyClassDesc, "Commercial")) %>%
   slice_sample(prop = .05) %>%
-  arrange(isResidential, isCommercial) %>% 
-vis_miss(cluster = T) 
+  arrange(isResidential, isCommercial) %>%
+vis_miss(cluster = T)
 ```
 
 ### Lincoln/Lancaster County Parcel GIS
 
-Parcel-level GIS maps are available at https://maps.lincoln.ne.gov/default/index.html?viewer=GISViewer. These data were systematically downloaded using the draw rectangle tool, and the zip files are in `data/shapefiles/*`. 
+Parcel-level GIS maps are available at https://maps.lincoln.ne.gov/default/index.html?viewer=GISViewer. These data were systematically downloaded using the draw rectangle tool, and the zip files are in `data/shapefiles/*`.
 
 ```{r}
 if (!file.exists("data/lincoln-shapes.Rdata")) {
@@ -261,10 +261,10 @@ if (!file.exists("data/lincoln-shapes.Rdata")) {
       return(res)
     }
   }
-  shapefiles <- purrr::map_df(shapefile_list, read_zip_sf) 
-  
+  shapefiles <- purrr::map_df(shapefile_list, read_zip_sf)
+
   shapefiles <- shapefiles %>% unique()
-  
+
   parcels <- shapefiles %>% st_drop_geometry() %>% unique()
   # Join shapefiles that have the same parcel ID
   shapes <- shapefiles %>%
@@ -274,7 +274,7 @@ if (!file.exists("data/lincoln-shapes.Rdata")) {
     summarize(geometry = st_union(geometry)) %>%
     mutate(geometry = st_transform(geometry, common_proj4string)) %>%
     left_join(parcels)
-  
+
   save(shapes, file = "data/lincoln-shapes.Rdata")
 } else {
   load("data/lincoln-shapes.Rdata")
@@ -293,8 +293,8 @@ property_data <-  lc_data %>%
 
 map_data <- property_data %>%
   select(Parcel_ID, PropertyClass, PropertyClassStatus, Owner, Own_City, Own_State, ResTypeDesc, ImpType, Foundation, geometry)
-  
-  
+
+
 ```
 
 It may make sense to systematically download any missing files via script, as spot-checks of missing parcels suggest the information is present in the system and may just not be exporting properly. Of the `r nrow(missing_parcels)` missing parcels in the data, `r filter(missing_parcels, PropertyClass == "Residential") %>% nrow()` are residential and may potentially affect the analysis.
@@ -307,10 +307,10 @@ It may make sense to systematically download any missing files via script, as sp
 #| cache: true
 
 prop_type_pal <- c(Residential = "#8EB8E5", Commercial = "#272932", Ag = "#CAFFB9")
-basemap + 
-  geom_sf(data = map_data, 
-          aes(geometry = geometry, fill = PropertyClass, color = PropertyClass), alpha = .5) + 
-  scale_fill_manual("Property Class", values = prop_type_pal) + 
+basemap +
+  geom_sf(data = map_data,
+          aes(geometry = geometry, fill = PropertyClass, color = PropertyClass), alpha = .5) +
+  scale_fill_manual("Property Class", values = prop_type_pal) +
   scale_color_manual("Property Class", values = prop_type_pal) +
   theme(legend.position = "left")
 
@@ -321,18 +321,18 @@ basemap +
 
 In order to promote action on housing affordability in Lancaster County, it is important to understand who the players are: to build consensus, we will need cooperation between government entities, landlords, and tenants. Right now, it is the landlords who are the unknown quantity: are most units in Lancaster county owned by small-time landlords with 1-3 single units or duplexes? Or is the rental space dominated primarily by large, out of state investment companies?
 
-All sources of data at the county level will be incomplete in some way: the property tax data does not indicate whether a home is used as a rental property or is owner-occupied. Large landlords may be more likely to have properties which are registered with the city housing authority, but this is not a guarantee. 
+All sources of data at the county level will be incomplete in some way: the property tax data does not indicate whether a home is used as a rental property or is owner-occupied. Large landlords may be more likely to have properties which are registered with the city housing authority, but this is not a guarantee.
 
 
 ### Property Tax Data
 
-The property tax data includes the owner's address as well as the site address; it stands to reason that if the owner occupies the premises, the owner's address will match the site address. 
-Not all entries have a site address, however, most entries without a site address are unimproved properties, as shown in @fig-missing-site-addr-summary. 
-Unimproved properties do not have buildings and thus most likely do not contain current residents, and so, for the purposes of this analysis, we can ignore these properties. 
+The property tax data includes the owner's address as well as the site address; it stands to reason that if the owner occupies the premises, the owner's address will match the site address.
+Not all entries have a site address, however, most entries without a site address are unimproved properties, as shown in @fig-missing-site-addr-summary.
+Unimproved properties do not have buildings and thus most likely do not contain current residents, and so, for the purposes of this analysis, we can ignore these properties.
 
 ```{r}
 #| label: missing-site-addr-summary
-#| fig-cap: Assessment of missing site addresses. While there are missing/unassigned addresses across all categories, missing addresses are primarily found in unimproved properties, which are unlikely to have residents.  IOLL is an acronym for 'improvement on leased land', where the renter adds an improvement, such as a building or shed, and the renter is taxed for the improvement while the landowner pays taxes on the land separately. 
+#| fig-cap: Assessment of missing site addresses. While there are missing/unassigned addresses across all categories, missing addresses are primarily found in unimproved properties, which are unlikely to have residents.  IOLL is an acronym for 'improvement on leased land', where the renter adds an improvement, such as a building or shed, and the renter is taxed for the improvement while the landowner pays taxes on the land separately.
 
 has_site_addr_summary <- property_data %>%
   mutate(has_site_addr = !is.na(SitusAddress)) %>%
@@ -340,13 +340,13 @@ has_site_addr_summary <- property_data %>%
   summarize(count = n()) %>%
   ungroup()
 
-ggplot(has_site_addr_summary, aes(x = PropertyClass, color = PropertyClassStatus, fill = PropertyClassStatus, alpha = has_site_addr, y = count)) + 
-  geom_col() + 
-  scale_color_discrete("Property Status") + 
-  scale_fill_discrete("Property Status") + 
-  scale_alpha_manual("Site Address", values = c(.5, 1)) + 
-  ggtitle("Property Address Listed") + 
-  ylab("# Properties") + 
+ggplot(has_site_addr_summary, aes(x = PropertyClass, color = PropertyClassStatus, fill = PropertyClassStatus, alpha = has_site_addr, y = count)) +
+  geom_col() +
+  scale_color_discrete("Property Status") +
+  scale_fill_discrete("Property Status") +
+  scale_alpha_manual("Site Address", values = c(.5, 1)) +
+  ggtitle("Property Address Listed") +
+  ylab("# Properties") +
   xlab("Property Type")
 # table(property_data$PropertyClassDesc, is.na(property_data$SitusAddress), useNA = 'ifany')
 ```
@@ -362,7 +362,7 @@ tmp %>%
   DT::datatable(rownames = F, caption = "Improved and IOLL properties with no address make up less than 1% of all properties in the database.")
 ```
 
-This analysis proceeds ignoring unimproved properties and with the assumption that properties without a specified address are a relatively small contribution to the overall analysis. In addition, as acreages are typically classed as residential properties even when in agricultural areas, we will remove agricultural areas from the remainder of the analysis unless they are classed as acreages. 
+This analysis proceeds ignoring unimproved properties and with the assumption that properties without a specified address are a relatively small contribution to the overall analysis. In addition, as acreages are typically classed as residential properties even when in agricultural areas, we will remove agricultural areas from the remainder of the analysis unless they are classed as acreages.
 Not all commercial buildings will be apartments; of the commercial building classifications in the data set, the following appear to be "residential" or at least partially residential in nature:
 
 - 01-Apartment
@@ -380,7 +380,7 @@ Restricting commercial properties to these classifications, we have the followin
 
 ```{r}
 #| label: owner-occupied-summary
-#| fig-cap: Assessment of whether properties are owner-occupied, based on whether the owner's address matches (or partially matches) the site address. NA values occur when no site address is present in the data, likely because an official mailing address has not been assigned for the parcel.  
+#| fig-cap: Assessment of whether properties are owner-occupied, based on whether the owner's address matches (or partially matches) the site address. NA values occur when no site address is present in the data, likely because an official mailing address has not been assigned for the parcel.
 
 property_data <- property_data %>%
   filter(PropertyClassStatus != "Unimproved") %>%
@@ -393,11 +393,11 @@ owner_occupied_summary <- property_data %>%
   group_by(PropertyClass) %>%
   mutate(prop = count/sum(count))
 
-ggplot(owner_occupied_summary, aes(x = own_occupied, fill = PropertyClass, y = count)) + 
-  geom_col() + 
-  ggtitle("Owner and Property Address Correspondance") + 
-  ylab("Proportion of Properties") + 
-  xlab("Owner Occupied") + 
+ggplot(owner_occupied_summary, aes(x = own_occupied, fill = PropertyClass, y = count)) +
+  geom_col() +
+  ggtitle("Owner and Property Address Correspondance") +
+  ylab("Proportion of Properties") +
+  xlab("Owner Occupied") +
   scale_fill_discrete("Property Type")
 ```
 
@@ -408,9 +408,9 @@ ggplot(owner_occupied_summary, aes(x = own_occupied, fill = PropertyClass, y = c
 #| fig-width: 6
 #| fig-height: 8
 
-basemap + 
-  geom_sf(data = property_data, 
-          aes(geometry = geometry, fill = own_occupied, color = own_occupied), alpha = .5) + 
+basemap +
+  geom_sf(data = property_data,
+          aes(geometry = geometry, fill = own_occupied, color = own_occupied), alpha = .5) +
   theme(legend.position = "left") +
   ggtitle("Residential Buildings in Lancaster County, NE")
 
@@ -419,36 +419,72 @@ basemap +
 
 ## Exploring Owner Types
 
-One interesting facet of this data is that properties can be owned by many different types of entities - individuals, LLCs, incorporated companies, life estates, and trusts, among others. 
-While it is certainly possible for a house to be owned by a trust and not rented out (e.g. for estate planning purposes), it seems reasonable to develop a variable indicating whether residential properties are owned by an individual entity or not. To do this, we will flag any property where the Owner name includes " INC", " LLC", " Trust", " Estate", "authority", "Rem Int" (remaining interest, e.g. inherits after death of occupant), or "corporation". 
+One interesting facet of this data is that properties can be owned by many different types of entities - individuals, LLCs, incorporated companies, life estates, and trusts, among others.
+While it is certainly possible for a house to be owned by a trust and not rented out (e.g. for estate planning purposes), it seems reasonable to develop a variable indicating whether residential properties are owned by an individual entity or not. To do this, we will flag any property where the Owner name includes " INC", " LLC",  "authority", or "corporation".
+A separate indicator variable will be created to flag properties which are owned by estates and trusts - these properties may be investment vehicles (e.g. in the case of a family trust which generates income from real estate investment/rental properties), but more commonly are used for estate planning and/or providing for relatives who depend on social programs such as SSDI, SSI, and Medicare/Medicaid.
 
 ```{r}
 #| label: owner-investment-summary
-#| fig-cap: Assessment of whether properties are owned by commercial/legal entities, such as corporations, LLCs, companies, or trust/estate vehicles. 
+#| fig-cap: Assessment of whether properties are owned by commercial/legal entities, such as corporations, LLCs, companies, or trust/estate vehicles.
 
 property_data <- property_data %>%
-  mutate(own_investment = str_detect(str_to_upper(Owner), "\\W(INC|LLC|TRUST|ESTATE|CORPORATION|COMPANY|LLP|REM|INT|AUTHORITY)"))
+  mutate(own_investment = str_detect(str_to_upper(Owner), "\\W(INC|LLC|CORPORATION|COMPANY|LLP|REM|INT|AUTHORITY)"),
+         own_estate = str_detect(str_to_upper(Owner), "\\W(ESTATE|TRUST)"))
 
 own_investment_summary <- property_data %>%
-  group_by(PropertyClass, own_investment, own_occupied) %>%
+  select(Parcel_ID, own_occupied, own_investment, own_estate) %>%
+  group_by(Parcel_ID) %>%
+  unique() %>%
   filter(!is.na(own_occupied)) %>%
   mutate(own_occupied = if_else(own_occupied, "Owner Occupant", "Other Occupant"),
-         own_investment = if_else(own_investment, "Investment", "Single Owner")) %>%
+         own_investment = if_else(own_investment, "Investment", "Single Owner"),
+         own_estate = if_else(own_estate, "Estate/Trust", if_else(own_investment == "Investment", "Investment", "Single Owner"))) %>%
+  group_by(own_occupied, own_estate) %>%
+  mutate(own_occuped = factor(own_occupied, labels = c("Owner", "Other"), levels = c("Owner Occupant", "Other Occupant"), ordered = T)) %>%
   reframe(count = n())
 
-ggplot(own_investment_summary, aes(x = own_investment, color = PropertyClass, fill = PropertyClass, y = count, alpha = own_occupied)) + 
-  # facet_wrap(~own_occupied) + 
-  geom_col() + 
-  scale_alpha_discrete("Occupant", c(.5, 1)) + 
-  ggtitle("Investment Indicators and Property Address Correspondance") + 
-  xlab("Investment Ownership") + 
-  scale_fill_discrete("Property Type") + 
-  scale_color_discrete("Property Type")
+ggplot(own_investment_summary, aes(x = own_estate, y = count, fill = own_occupied)) +
+  # facet_wrap(~own_occupied) +
+  geom_col(color = "black", position = "dodge") +
+  geom_text(aes(label = count, x = own_estate, y = count + 1000), position = position_dodge(width = 1)) +
+  scale_fill_manual("Occupant", values = c("grey80","grey50")) +
+  ggtitle("Investment Indicators and Property Address Correspondance") +
+  xlab("Ownership") +
+  ylab("# Properties")
 ```
 
-While it is certainly more likely that a property owned by an investment entity will be occupied by someone other than the owner, it is not a guarantee; there are a reasonable number of e.g. life estate/estate planning solutions that result in the owner occupying the premises.
+We can see from @fig-owner-investment-summary that most properties owned by LLCs/corporations are not owner-occupied, but that approximately half of those owned by estates/trusts are owner-occupied, and about 3/5 of the properties owned by individuals are owner-occupied.
 
 
+
+## Exploring Properties per Owner
+
+Examining the properties per owner is somewhat difficult, in part because some parcels list multiple owners and some owners have multiple parcels, and to make this more complicated, parcels can be combined to host a single house (think of situations where someone buys an adjacent, empty lot to use as a yard in close-packed houses).
+This is all to say that any attempts to estimate the number of properties per owner will have edge cases that are counted incorrectly.
+In order to account for parcels with multiple owners and houses that have multiple parcels, a weight value was calculated such that for each unique parcel with the same site address, the weight for that parcel/address combination was 1, and for each unique site address, the weight for the address itself was 1. So a single address split into 2 parcels, where one parcel has 2 owners would have weight values (.5, .25, .25).
+These weight values are then used in the calculation of number of properties; this creates fractional properties that hopefully provide a better estimate given the peculiarities of the existing data.
+
+
+```{r}
+owner_info <- property_data %>%
+  unique() %>%
+  mutate(SitusAddress = if_else(is.na(SitusAddress), LegalDescription, SitusAddress)) %>%
+  group_by(SitusAddress, Parcel_ID) %>%
+  mutate(weight = 1/n()) %>%
+  group_by(SitusAddress) %>%
+  mutate(weight = 1/sum(weight)) %>%
+  group_by(Owner, Own_Address1, Own_Address2, Own_Address3, Own_City, Own_State, Own_Zip, Own_UnitNumber) %>%
+  mutate(
+    weighted_no_units = if_else(is.na(ComNoUnits), weight, weight*ComNoUnits),
+    n_own_properties = sum(weight),
+    n_own_units = sum(weighted_no_units)) %>%
+  nest(property = -c(starts_with("Own", n_own_properties, n_own_units)) %>%
+  ungroup()
+
+save(owner_info, file = "data/owner_info.Rdata")
+
+ggplot(owner_info, aes(x = n_own_properties)) + geom_histogram()
+```
 
 
 
