@@ -426,7 +426,7 @@ This is addressed in @fig-large-small-landlords.
 
 ```{r}
 #| label: fig-large-small-landlords
-#| fig-cap: Local, small-time landlords control more than half of the approximately 47000 units available in Lancaster county which are not owner-occupied. Large companies (defined as companies who control more than 0.05% of available rental units in Lancaster county) control approximately 37% of the available units. Local, large rental companies based in the county control 23% of available units.
+#| fig-cap: Large landlords control almost 70% of the approximately 53000 units available in Lancaster county which are not owner-occupied.
 tmp <- rental_info %>%
   mutate(big = pct_own_units >= 0.0005) %>%
   mutate(big = ifelse(big, "Large Landlords", "Small Landlords") %>%
@@ -443,7 +443,7 @@ tmp2 <- tmp %>%
   summarize(n_own_units = sum(n_own_units),
             n_own_units_adj = sum(n_own_units_adj),
             n_own_properties = sum(n_own_properties),
-            n_entities = n(),
+            n_entities = sum(n_entities),
             pct_units = sum(pct_units))
 
 ggplot() + 
