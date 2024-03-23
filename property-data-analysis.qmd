@@ -134,7 +134,7 @@ All sources of data at the county level will be incomplete in some way: the prop
 
 ## Data Sources
 
-Data contributing to this analysis is described in [Property Data Description](property-data-description.qmd). 
+Data contributing to this analysis is described in [Property Data Description](property-data-description.html). 
 Data supporting maps was sourced from a number of public resources provided by the state of Nebraska and Lancaster county.
 Property assessment parcel data was obtained from the county assessor's office.
 Parcel GIS data was obtained from https://maps.lincoln.ne.gov/default/index.html?viewer=GISViewer using systematic manual downloads with the draw rectangle tool; some parcels did not have corresponding GIS information, either due to the manual nature of the download or due to mismatches within the different databases; this missingness should only affect displayed maps.
