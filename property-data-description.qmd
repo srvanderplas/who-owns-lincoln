@@ -1,0 +1,318 @@
+---
+title: "Lincoln Property Assessment Data"
+author: "Susan Vanderplas"
+format: html
+execute:
+  cache: true
+  echo: false
+  message: false
+  warning: false
+  out-width: 100%
+---
+
+
+```{r setup}
+#| include: false
+#| cache: false
+
+library(tidyr)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+library(ggforce)
+library(ggthemes)
+library(stringr)
+library(readxl)
+library(geojsonio)
+library(DT)
+library(skimr)
+library(naniar)
+library(sf)
+common_proj4string <- "+proj=longlat +datum=WGS84"
+ggplot2::theme_set(theme_bw())
+```
+
+## Data Acquisition
+
+### Land Use Map
+
+A land use geojson file was obtained from Lincoln's open data site ([link](https://opendata.lincoln.ne.gov/datasets/9f1248c80d9a41caa55da937ad002d86_1)).
+
+```{r}
+# geodata <- geojson_sf("data/Existing_Land_Use.geojson")
+```
+
+This data does not appear to have parcel numbers, so it is not as useful as anticipated.
+
+### Contextual Maps
+
+A map of Nebraska roads was obtained from Nebraska's [open data site](https://www.nebraskamap.gov/datasets/dc69abca3b1a43749dea2141a3544bc9_0/explore) to provide contextual cues for generated maps. Smaller roads were added from Lancaster county's [street data](https://opendata.lincoln.ne.gov/datasets/a7dae9fff57a4c978084dd46cb287006/explore?location=40.773129%2C-96.760113%2C15.26).
+
+A map of Nebraska rivers was obtained from the state [open data site](https://www.nebraskamap.gov/datasets/defabeec3a4946c7a0a4fbd279f64e17_0/explore?location=29.038537%2C-77.039422%2C5.50) for additional contextual information. Lakes and other static bodies of water were acquired using [waterbodies data](https://www.nebraskamap.gov/datasets/db03cd43fece4933b8fb9727243a6aa9_0/explore?location=41.974545%2C-100.079057%2C7.07)
+
+A map of [nebraska counties](https://www.nebraskamap.gov/datasets/f8f32ae0dd254524a81477c656e3e469_0/explo.re?location=41.376390%2C-99.634600%2C6.61) was obtained and used to crop the roads and rivers information to Lancaster county in order to save space and allow for upload of the dependent data files to GitHub. Municipal boundaries were sourced from [state records](https://www.nebraskamap.gov/datasets/ecc5102303b948aea73b0b4ebcce66b0_0/explore) and added for additional context.
+
+This information allows us to create a base map, shown below in @fig-context-maps.
+
+```{r data-setup}
+#| message: false
+#| warning: false
+#| error: false
+#| include: false
+
+ne_counties <- st_read("data/County_Boundaries.geojson") %>%
+  st_transform(common_proj4string)
+
+lancaster <- ne_counties %>%
+  filter(Cnty_Name == "Lancaster") %>%
+  st_transform(common_proj4string)
+
+county_bbox <- st_bbox(lancaster) * c(1.00065, 0.99935, 0.99935, 1.00065)
+county_bbox <- st_as_sfc(county_bbox) %>%
+  st_transform(common_proj4string)
+ne_counties_crop <- ne_counties %>%
+  filter(st_intersects(county_bbox, sparse = F)[1,])
+
+ne_counties_crop <- st_crop(ne_counties, county_bbox) %>%
+  rename(IDName = Cnty_Name, GLOBALID = GlobalID)
+
+if (!file.exists("data/lancaster-co-features.geojson") | !file.exists("data/municipal-boundaries.geojson")) {
+
+  roads <- st_read("data/Highways.geojson") %>%
+    rename(IDName = HwyLabel, Length = Shape_Length) %>%
+    st_transform(common_proj4string)
+  # Crop to bounding box, then subtract off roads within the county (covered by streets)
+  county_roads <- roads %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
+    st_crop(., county_bbox) %>%
+    st_make_valid() %>%
+    select(IDName, HwyType, geometry) %>%
+    st_transform(common_proj4string) %>%
+    st_difference(lancaster$geometry)
+
+  streets <- st_read("data/Streets.geojson") %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
+    st_make_valid() %>%
+    select(STNAME, STPRE, STTYPE, SPEEDLIM, LENGTH_MI,
+           matches("Walk"), matches("Drive"), fMajorRoadType, OnStreetBike) %>%
+    group_by(STNAME, STPRE, STTYPE) %>%
+    reframe(geometry = st_union(geometry), SPEEDLIM = mean(SPEEDLIM), LENGTH_MI = sum(LENGTH_MI),
+            fMajorRoadType = table(fMajorRoadType, useNA = 'ifany') %>% sort(decreasing = T) %>% names() %>% `[`(1)) %>%
+    filter(LENGTH_MI > 1) %>%
+    rename(IDName = STNAME)
+
+
+  rivers <- st_read("data/River_Areas.geojson") %>%
+    rename(IDName = Permanent_Identifier, Name = GNIS_Name) %>%
+    st_transform(common_proj4string)
+
+  county_rivers <- rivers %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
+    st_crop(., county_bbox) %>%
+    st_make_valid()
+
+  water <- st_read("data/Waterbodies.geojson") %>%
+    rename(IDName = Permanent_Identifier, Name = GNIS_Name) %>%
+    st_transform(common_proj4string)
+
+  county_lakes <- water %>%
+    filter(AreaSqKm>0.1) %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,]) %>%
+    st_crop(., county_bbox) %>%
+    st_make_valid()
+
+  municipal <- st_read("data/Municipal_Points.geojson") %>%
+    rename(ID = FEATURE_ID, IDName = FEATURE_NAME, Class = FEATURE_CLASS,
+           State = STATE_ALPHA,
+           County = COUNTY_NAME, COUNTYFP = COUNTY_NUMERIC,
+           Label_LAT = PRIM_LAT_DEC, Label_LON = PRIM_LONG_DEC,
+           Elevation = ELEV_IN_FT) %>%
+    select(-ends_with("DMS"), -ELEV_IN_M) %>%
+    st_transform(common_proj4string)
+  county_points <- municipal %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = FALSE)[1,])
+
+
+  municipal_boundaries <- st_read("data/Municipal_Boundaries.geojson") %>%
+    rename(ID = GEOID, IDName = NAME, Class = CLASSFP,
+           Label_LON = INTPTLON, Label_LAT = INTPTLAT) %>%
+    select(-PCICBSA:AWATER) %>%
+    mutate(across(matches("Label"), as.numeric)) %>%
+    st_transform(common_proj4string) %>%
+    filter(st_intersects(lancaster$geometry[[1]], ., sparse = F)[1,])
+
+
+
+  county_features <- bind_rows(
+    mutate(county_rivers, type = "river"),
+    mutate(county_lakes, type = "lakes"),
+    mutate(county_roads, type = "roads"),
+    mutate(municipal_boundaries, type = "municipal"),
+    mutate(ne_counties_crop, type = "county"),
+    mutate(streets, type = "roads")
+  ) %>%
+    filter(st_is_valid(.)) %>%
+    select(-c(ReachCode, STATEFP, PLACEFP, PLACENS, LSAD, PCICBSA, PCINECTA, MTFCC, FUNCSTAT, ALAND, AWATER, Cnty_No)) %>%
+    mutate(OBJECTID = if_else(is.na(OBJECTID), max(OBJECTID, na.rm = T) + 1:n(), OBJECTID))
+
+  write_sf(county_features, "data/lancaster-co-features.geojson", delete_dsn = T)
+  write_sf(municipal_boundaries, "data/municipal-boundaries.geojson")
+
+} else {
+  county_features <- st_read("data/lancaster-co-features.geojson") %>%
+    st_transform(common_proj4string)
+  
+  municipal_boundaries <- st_read("data/municipal-boundaries.geojson") %>%
+    st_transform(common_proj4string)
+}
+```
+
+```{r}
+#| label: fig-context-maps
+#| fig-cap: Base map for showing analysis results
+#| fig-width: 6
+#| fig-height: 8
+#| out-width: 100%
+#| cache: true
+basemap <- ggplot() +
+  theme_map() +
+  ggtitle("Lancaster County, NE") +
+  geom_sf(data = filter(county_features, type == "county" & IDName != "Lancaster"),
+          fill = "grey80", alpha = 0.5) +
+  geom_sf(data = filter(county_features, type == "river"),
+          color = "blue", alpha = .5) +
+  geom_sf(data = filter(county_features, type == "lakes"),
+          color = "blue", fill = "blue", alpha = .5) +
+  geom_sf(data = filter(county_features, type == "roads"),
+          color = "grey50", alpha = .25) +
+  geom_sf(data = filter(county_features, type == "municipal"),
+          color = "grey50", fill = "grey50", alpha = .125) +
+  geom_sf_text(data = filter(county_features, type == "municipal"),
+               aes(label = IDName),
+               size = 2, nudge_y = 0.01, nudge_x = 0.01)
+
+basemap
+```
+
+
+### Property Assessment Records
+
+Two xlsx files were acquired from Doug R. Guess of the Lancaster County GIS office on 2024-03-13; the total cost of the database search was $60 (+ $2 processing fee). The information is publicly available at https://app.lincoln.ne.gov/aspx/cnty/cto/, but assembling the full dataset would require assembling data from approximately `r 26^3` queries; it was deemed reasonable to pay for the data rather than assemble it manually.
+
+```{r}
+lc_data1 <- read_xlsx("data/SusanVanderPlas.xlsx")
+lc_data2 <- read_xlsx("data/SusanVanderPlas-New.xlsx")
+```
+
+- data/SusanVanderplas.xlsx contains `r nrow(lc_data1)` rows and `r nrow(lc_data1)` columns, including the following columns not present in the initial data file: `r paste(setdiff(names(lc_data1), names(lc_data2)), collapse = ", ")`
+- data/SusanVanderplas-New.xlsx contains `r nrow(lc_data2)` rows and `r nrow(lc_data2)` columns, including the following columns not present in the initial data file: `r paste(setdiff(names(lc_data2), names(lc_data1)), collapse = ", ")`
+
+Further analysis shows that
+
+- `PrimeUseDesc` and `PrimaryUseDesc` have the same 28 levels (and are thus most likely duplicated columns)
+- `Prop_ClassDesc` and `PropertyClassDesc` have the same 8 levels
+
+Joining the two datasets on common variables allowed verification that (`TotalAcres`, `Total_Acres`) and (`SitusAddress`, `Situs`) contain the same information. In addition, joining the two datasets on all variables did not produce any non-matching rows, indicating that `data/SusanVanderPlas.xlsx` contains a subset of the data present in `data/SusanVanderPlas-New.xlsx`.
+What is curious is that `data/SusanVanderPlas-New.xlsx` contains more rows and columns than `data/SusanVanderplas.xlsx` but takes up approximately 0.3 MB less space on disk.
+
+```{r}
+lc_data1_fix <- lc_data1 %>%
+  rename(PrimaryUseDesc = PrimeUseDesc, PropertyClassDesc = Prop_ClassDesc, TotalAcres = Total_Acres, SitusAddress = Situs)
+lc_data <- full_join(lc_data1_fix, lc_data2)
+rm(lc_data1_fix, lc_data1, lc_data2)
+```
+
+After joining the two data tables to ensure that the maximum information available is analyzed, there are `r nrow(lc_data)` records with `r ncol(lc_data)` available variables.
+
+```{r}
+skim(lc_data)
+```
+
+Breaking this summary down, we can see associations between variable missingness, which likely occurs due to the difference between residential and commercial properties, assessments, and valuation. Examining this hypothesis with a 10% sample of the data, clustering observations by missingness, we can see there is a group of observations that is largely missing the assessment information for residential housing, such as `ResTypeDesc`, ..., `GarageCap`, but these observations are more likely to have `ComBldgNo`, ..., `ComNoUnits`; there is also a group which seems to lack both sets of information.
+
+```{r, eval = F}
+lc_data %>%
+  mutate(isResidential = str_detect(PropertyClassDesc, "Residential"),
+         isCommercial = str_detect(PropertyClassDesc, "Commercial")) %>%
+  slice_sample(prop = .05) %>%
+  arrange(isResidential, isCommercial) %>%
+vis_miss(cluster = T)
+```
+
+### Lincoln/Lancaster County Parcel GIS
+
+Parcel-level GIS maps are available at https://maps.lincoln.ne.gov/default/index.html?viewer=GISViewer. These data were systematically downloaded using the draw rectangle tool, and the zip files are in `data/shapefiles/*`.
+
+```{r shapefile-processing}
+if (!file.exists("data/lincoln-shapes.Rdata")) {
+  shapefile_list <- list.files("data/shapefiles/", full.names = T)
+
+  read_zip_sf <- function(file){
+    tmp <- tempdir()
+    unzip(file, exdir = tmp)
+    res <- try(read_sf(tmp, layer = "Ownership Parcels"))
+    if ("try-error" %in% class(res)) {
+      return(data.frame())
+    } else {
+      return(res)
+    }
+  }
+  shapefiles <- purrr::map_df(shapefile_list, read_zip_sf)
+
+  shapefiles <- shapefiles %>% unique()
+
+  parcels <- shapefiles %>% st_drop_geometry() %>% unique()
+  # Join shapefiles that have the same parcel ID
+  shapes <- shapefiles %>%
+    select(PARCELID) %>%
+    mutate(geometry = st_make_valid(geometry)) %>%
+    group_by(PARCELID) %>%
+    summarize(geometry = st_union(geometry)) %>%
+    mutate(geometry = st_transform(geometry, common_proj4string)) %>%
+    left_join(parcels)
+
+  save(shapes, file = "data/lincoln-shapes.Rdata")
+} else {
+  load("data/lincoln-shapes.Rdata")
+}
+
+missing_parcels <- lc_data %>%
+  mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
+  separate(PropertyClassDesc, c("PropertyClass", "PropertyClassStatus"), remove = F)  %>%
+  anti_join(shapes, by = c("Parcel_ID"= "PARCELID", "SitusAddress" = "SITEADDRES"))
+
+property_data <-  lc_data %>%
+  mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
+  separate(PropertyClassDesc, c("PropertyClass", "PropertyClassStatus"), remove = F)  %>%
+  left_join(shapes, by = c("Parcel_ID"= "PARCELID", "SitusAddress" = "SITEADDRES"))
+
+map_data <- property_data %>%
+  select(Parcel_ID, PropertyClass, PropertyClassStatus, Owner, Own_City, Own_State, ResTypeDesc, ImpType, Foundation, geometry)
+```
+
+It may make sense to systematically download any missing files via script, as spot-checks of missing parcels suggest the information is present in the system and may just not be exporting properly. Of the `r nrow(missing_parcels)` missing parcels in the data, `r filter(missing_parcels, PropertyClass == "Residential") %>% nrow()` are residential and may potentially affect the analysis. @fig-land-use-map shows the property class type of properties with available spatial data.
+
+```{r}
+#| label: fig-land-use-map
+#| fig-cap: "Map of property class type, for properties with corresponding spatial regions in the database."
+#| fig-width: 6
+#| fig-height: 8
+#| cache: true
+
+prop_type_pal <- c(Residential = "#8EB8E5", Commercial = "#272932", Ag = "#CAFFB9")
+basemap +
+  geom_sf(data = map_data,
+          aes(geometry = geometry, fill = PropertyClass, color = PropertyClass), alpha = .5) +
+  scale_fill_manual("Property Class", values = prop_type_pal) +
+  scale_color_manual("Property Class", values = prop_type_pal) +
+  theme(legend.position = "left")
+
+```
+
+## Definitions
+
+Some of the acronyms used by various government organizations are not necessarily well defined within the data set documentation.
+
+- IOLL is an acronym meaning 'Improvements on Leased Land', which are taxed separately from the land itself, as the owner of the improvement is different than the owner of the land itself. [Source](https://revenue.nebraska.gov/sites/revenue.nebraska.gov/files/doc/pad/forms/402_Improvements_on_Leased_Land.pdf)
+
+

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.489">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Susan Vanderplas">
+
+<title>Who Owns Lincoln?</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="property-data-analysis_files/libs/clipboard/clipboard.min.js"></script>
+<script src="property-data-analysis_files/libs/quarto-html/quarto.js"></script>
+<script src="property-data-analysis_files/libs/quarto-html/popper.min.js"></script>
+<script src="property-data-analysis_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="property-data-analysis_files/libs/quarto-html/anchor.min.js"></script>
+<link href="property-data-analysis_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="property-data-analysis_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="property-data-analysis_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="property-data-analysis_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="property-data-analysis_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="property-data-analysis_files/libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<link href="property-data-analysis_files/libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet">
+<script src="property-data-analysis_files/libs/datatables-binding-0.32/datatables.js"></script>
+<script src="property-data-analysis_files/libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<link href="property-data-analysis_files/libs/dt-core-1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
+<link href="property-data-analysis_files/libs/dt-core-1.13.6/css/jquery.dataTables.extra.css" rel="stylesheet">
+<script src="property-data-analysis_files/libs/dt-core-1.13.6/js/jquery.dataTables.min.js"></script>
+<link href="property-data-analysis_files/libs/crosstalk-1.2.1/css/crosstalk.min.css" rel="stylesheet">
+<script src="property-data-analysis_files/libs/crosstalk-1.2.1/js/crosstalk.min.js"></script>
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Who Owns Lincoln?</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Susan Vanderplas </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell" data-hash="property-data-analysis_cache/html/context-maps_dc0a84f2fde8a8d0fede85b4e1033f9c">
+<div class="cell-output cell-output-stdout">
+<pre><code>Reading layer `lancaster-co-features' from data source 
+  `/home/susan/Projects/Fun/who-owns-lincoln/data/lancaster-co-features.geojson' 
+  using driver `GeoJSON'
+Simple feature collection with 536 features and 25 fields
+Geometry type: GEOMETRY
+Dimension:     XY
+Bounding box:  xmin: -96.97692 ymin: 40.49666 xmax: -96.40093 ymax: 41.07315
+Geodetic CRS:  WGS 84</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Reading layer `municipal-boundaries' from data source 
+  `/home/susan/Projects/Fun/who-owns-lincoln/data/municipal-boundaries.geojson' 
+  using driver `GeoJSON'
+Simple feature collection with 13 features and 15 fields
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: -96.87256 ymin: 40.53035 xmax: -96.49234 ymax: 40.98734
+Geodetic CRS:  WGS 84</code></pre>
+</div>
+</div>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<section id="primary-question-who-owns-lincoln" class="level2">
+<h2 class="anchored" data-anchor-id="primary-question-who-owns-lincoln">Primary Question: Who Owns Lincoln?</h2>
+<p>In order to promote action on housing affordability in Lancaster County, it is important to understand who the players are: to build consensus, we will need cooperation between government entities, landlords, and tenants. Right now, it is the landlords who are the unknown quantity: are most units in Lancaster county owned by small-time landlords with 1-3 single units or duplexes? Or is the rental space dominated primarily by large, out of state investment companies?</p>
+<p>All sources of data at the county level will be incomplete in some way: the property tax data does not indicate whether a home is used as a rental property or is owner-occupied. Large landlords may be more likely to have properties which are registered with the city housing authority, but this is not a guarantee.</p>
+</section>
+<section id="data-sources" class="level2">
+<h2 class="anchored" data-anchor-id="data-sources">Data Sources</h2>
+<p>Data contributing to this analysis is described in <a href="property-data-description.qmd">Property Data Description</a>. Data supporting maps was sourced from a number of public resources provided by the state of Nebraska and Lancaster county. Property assessment parcel data was obtained from the county assessor’s office. Parcel GIS data was obtained from https://maps.lincoln.ne.gov/default/index.html?viewer=GISViewer using systematic manual downloads with the draw rectangle tool; some parcels did not have corresponding GIS information, either due to the manual nature of the download or due to mismatches within the different databases; this missingness should only affect displayed maps.</p>
+</section>
+<section id="property-class-type" class="level2">
+<h2 class="anchored" data-anchor-id="property-class-type">Property Class Type</h2>
+<p><span class="citation" data-cites="land-use-map">@land-use-map</span> shows the property class type as listed in the assessor’s database for all regions with corresponding spatial information.</p>
+<div class="cell" data-hash="property-data-analysis_cache/html/land-use-map_239bb5fad0e6d0024501ea664ca4e3e3">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="property-data-analysis_files/figure-html/land-use-map-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+<figcaption>Map of property class type, for properties with corresponding spatial regions in the database.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="property-assessment-data" class="level1">
+<h1>Property Assessment Data</h1>
+<section id="constructing-owner-occupancy" class="level2">
+<h2 class="anchored" data-anchor-id="constructing-owner-occupancy">Constructing Owner Occupancy</h2>
+<p>The property tax data includes the owner’s address as well as the site address; it stands to reason that if the owner occupies the premises, the owner’s address will match the site address. Not all entries have a site address, however, most entries without a site address are unimproved properties, as shown in <span class="citation" data-cites="missing-site-addr-summary">@missing-site-addr-summary</span>. Unimproved properties do not have buildings and thus most likely do not contain current residents, and so, for the purposes of this analysis, we can ignore these properties.</p>
+<div class="cell" data-hash="property-data-analysis_cache/html/missing-site-addr-summary_30866d6075680d9089d901f2a3f664b0">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="property-data-analysis_files/figure-html/missing-site-addr-summary-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Assessment of missing site addresses. While there are missing/unassigned addresses across all categories, missing addresses are primarily found in unimproved properties, which are unlikely to have residents. IOLL is an acronym for ‘improvement on leased land’, where the renter adds an improvement, such as a building or shed, and the renter is taxed for the improvement while the landowner pays taxes on the land separately.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell" data-hash="property-data-analysis_cache/html/missing-site-addr-table_894bf9b4684ef1a3322872f3f65b026d">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Improved and IOLL properties with no address make up less than 1% of all properties in the database.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">PropertyClass</th>
+<th style="text-align: left;">PropertyClassStatus</th>
+<th style="text-align: right;">No Address</th>
+<th style="text-align: right;">Site Address</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Ag</td>
+<td style="text-align: left;">Improved</td>
+<td style="text-align: right;">230</td>
+<td style="text-align: right;">2984</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Commercial</td>
+<td style="text-align: left;">IOLL</td>
+<td style="text-align: right;">63</td>
+<td style="text-align: right;">123</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Commercial</td>
+<td style="text-align: left;">Improved</td>
+<td style="text-align: right;">427</td>
+<td style="text-align: right;">9462</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Residential</td>
+<td style="text-align: left;">IOLL</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">2167</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Residential</td>
+<td style="text-align: left;">Improved</td>
+<td style="text-align: right;">173</td>
+<td style="text-align: right;">97963</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Total</td>
+<td style="text-align: left;">Total</td>
+<td style="text-align: right;">902</td>
+<td style="text-align: right;">112699</td>
+</tr>
+</tbody>
+</table>
+<p>Assessment of impact of missing site addresses for Improved/IOLL properties.</p>
+</div>
+</div>
+<p>This analysis proceeds ignoring unimproved properties and with the assumption that properties without a specified address are a relatively small contribution to the overall analysis.</p>
+<p>As acreages are typically classed as residential properties even when in agricultural areas, we will remove agricultural areas from the remainder of the analysis unless they are classed as acreages. Not all commercial buildings will be apartments; of the commercial building classifications in the data set, the following appear to be “residential” or at least partially residential in nature:</p>
+<ul>
+<li>01-Apartment</li>
+<li>02-Student Apartment</li>
+<li>03-Senior and Community Living</li>
+<li>04-Hotel/Motel</li>
+<li>29-Residence on Commercial Account</li>
+<li>50-Fraternity House</li>
+<li>51-Nursing Home</li>
+<li>58-Apt over Commercial</li>
+<li>63-Community Living</li>
+<li>90-Mobile Home Courts</li>
+</ul>
+<p>The following analysis considers only commercial properties with the above classifications.</p>
+<p>If the first owner address field (<code>Own_Address1</code>) is at least partially contained within the site address (<code>SitusAddress</code>), then the property is considered owner-occupied. For example, if the Owner’s address is listed as <code>6121 S 97 ST</code>, and the Site address is listed as <code>6121 S 97TH ST, LINCOLN, NE  68526</code>, the property would be considered owner-occupied.</p>
+<div class="cell" data-hash="property-data-analysis_cache/html/owner-occupied-summary_27040a14cb954eb8d4d2a8e508649538">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="property-data-analysis_files/figure-html/owner-occupied-summary-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Assessment of whether properties are owner-occupied, based on whether the owner’s address matches (or partially matches) the site address. If no site address is present in the data, the owner-occupied status is set to FALSE, with the assumption that an official mailing address has not been assigned for the parcel because it is under-developed or unoccupied.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell" data-hash="property-data-analysis_cache/html/owner-occupied-map_796de2f845fa7cafbc541151f5198529">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="property-data-analysis_files/figure-html/owner-occupied-map-1.png" class="img-fluid figure-img" width="576"></p>
+<figcaption>Map of owner-occupied properties in Lancaster county. Properties which are commercial and do not involve housing (e.g.&nbsp;retail, industry) and agricultural properties that are not listed as acreages are excluded from this map.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="owner-types" class="level2">
+<h2 class="anchored" data-anchor-id="owner-types">Owner Types</h2>
+<p>One interesting facet of this data is that properties can be owned by many different types of entities - individuals, LLCs, incorporated companies, life estates, and trusts, among others. While it is certainly possible for a house to be owned by a trust and not rented out (e.g.&nbsp;for estate planning purposes), it seems reasonable to create a variable indicating whether residential properties are owned by an individual/single family. To do this, we will flag any property where the Owner name includes acronyms such as INC, LLC, LLP, LTD, and LP, or words such as community, company, corp, authority, university, investment, or apartments.</p>
+<p>A separate variable will be created to flag properties which are owned by estates and trusts - these properties may be investment vehicles (e.g.&nbsp;in the case of a family trust which generates income from real estate investment/rental properties), but are also commonly used for estate planning and/or providing for relatives who depend on social programs such as SSDI, SSI, and Medicare/Medicaid. One exception to this classification is if the owner name contains ‘real estate’, which would indicate ownership by a company rather than the type of family investment situation we hope to examine.</p>
+<div class="cell" data-hash="property-data-analysis_cache/html/owner-investment-summary_28206d448890157742a826ef3e58bad1">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="property-data-analysis_files/figure-html/owner-investment-summary-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Assessment of whether properties are owned by commercial/legal entities, such as corporations, LLCs, companies, or trust/estate vehicles.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We can see from <span class="citation" data-cites="owner-investment-summary">@owner-investment-summary</span> that most properties owned by LLCs/corporations are not owner-occupied, but that approximately half of those owned by estates/trusts are owner-occupied, and about 3/5 of the properties owned by individuals are owner-occupied.</p>
+</section>
+<section id="properties-per-owner" class="level2">
+<h2 class="anchored" data-anchor-id="properties-per-owner">Properties per Owner</h2>
+<p>Examining the properties per owner is somewhat difficult, in part because some parcels list multiple owners and some owners have multiple parcels, and to make this more complicated, parcels can be combined to host a single house (think of situations where someone buys an adjacent lot to use as a yard in close-packed neighborhoods). This is all to say that any attempts to estimate the number of properties per owner will have edge cases that are counted incorrectly. In order to account for parcels with multiple owners and houses that have multiple parcels, a weight value was calculated such that for each unique parcel with the same site address, the weight for that parcel/address combination was 1, and for each unique site address, the weight for the address itself was 1. So a single address split into 2 parcels, where one parcel has 2 owners would have weight values (.5, .25, .25). These weight values are then used in the calculation of number of properties; this creates fractional properties that hopefully provide a better estimate given the peculiarities of the existing data.</p>
+<p>Then, we remove any properties which are owner-occupied and where the owner has only one unit. That is, an owner-occupied complex with 8 units would still be included in this data set of units which are likely available for rent. <span class="citation" data-cites="properties-per-owner">@properties-per-owner</span> shows the distribution of property ownership for non-owner-occupied properties in Lancaster county. There are &lt;200 entities who own 4-5 properties, and the number of entities at each level of property ownership decreases sharply as the number of properties increases.</p>
+<div class="cell" data-hash="property-data-analysis_cache/html/properties-per-owner_75b031187a2397e11c1f2939f98141e1">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="property-data-analysis_files/figure-html/properties-per-owner-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Distribution of property ownership portfolio size, for those who own at least one unit that they do not reside in. There are considerably more individuals who own only one (additional) property, with an approximately exponential decrease in number of owners as number of properties owned decreases.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>However, this is only part of the total picture, as each property can contain only a single unit or hundreds of rental units. <span class="citation" data-cites="units-per-owner">@units-per-owner</span> shows the distribution of number of units owned by each individual entity.</p>
+<div class="cell" data-hash="property-data-analysis_cache/html/units-per-owner_5f7e9c1148080bb9ab462098fc1e4229">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="property-data-analysis_files/figure-html/units-per-owner-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Distribution of unit ownership portfolio size, for those who own at least one property that they do not reside in. Log-scale breaks are used on the x-axis in order to provide more precision at smaller x-axis values while still allowing for assessment of the distribution as the number of units owned increases.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="large-landlords" class="level2">
+<h2 class="anchored" data-anchor-id="large-landlords">Large Landlords</h2>
+<p>In many situations, it is important to assess how much outreach an organization could do with the available resources; as a result, it is also important to determine how much of Lancaster county’s properties are owned by “large landlords” - for the purposes of this assessment, landlords who own at least 0.05% of the properties in the county. This is addressed in <span class="citation" data-cites="large-small-landlords">@large-small-landlords</span>.</p>
+<div class="cell" data-hash="property-data-analysis_cache/html/large-small-landlords_2d31410c7367095f04b03058e26d2354">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="property-data-analysis_files/figure-html/large-small-landlords-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Local, small-time landlords control more than half of the approximately 90000 units available in Lancaster county which are not owner-occupied. Large companies (defined as companies who control more than 0.05% of available rental units in Lancaster county) control approximately 37% of the available units. Local, large rental companies based in the county control 23% of available units.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>A table of these landlords is provided below.</p>
+<div class="cell" data-hash="property-data-analysis_cache/html/big-landlord-tbl_1dba748235076618d2362b2ff182a277">
+<div class="cell-output-display">
+<div class="datatables html-widget html-fill-item" id="htmlwidget-2b9eefc05e1644cdb95d" style="width:100%;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-2b9eefc05e1644cdb95d">{"x":{"filter":"none","vertical":false,"caption":"<caption>Table of individuals and companies who own at least 0.05% of the units in Lincoln. Lancaster county (local) based entities are highlighted in red, Nebraska based entities are highlighted in light red, and out-of-state entitites are shown in white<\/caption>","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68","69","70","71","72","73","74","75","76","77","78","79","80","81","82","83","84","85","86","87","88","89","90","91","92","93","94","95","96","97","98","99","100","101","102","103","104","105","106","107","108","109","110","111","112","113","114","115","116","117","118","119","120","121","122","123","124","125","126","127","128","129","130","131","132","133","134","135","136","137","138","139","140","141","142","143","144","145","146","147","148","149","150","151","152","153","154","155","156","157","158","159","160","161","162","163","164","165","166","167","168","169","170","171","172","173","174","175","176","177","178","179","180","181","182","183","184","185","186","187","188","189","190","191","192","193","194","195","196","197","198","199","200","201","202","203","204","205","206","207","208","209","210","211","212","213","214","215","216","217","218","219","220","221","222","223","224","225","226","227","228","229","230","231","232","233","234","235","236","237","238","239","240","241","242","243","244","245","246","247","248","249","250","251","252","253","254","255","256","257","258","259","260","261","262","263","264","265","266","267","268","269","270","271","272","273","274","275","276","277","278","279","280","281","282","283","284","285","286","287","288","289","290","291","292","293","294","295","296","297","298","299","300","301","302","303","304","305","306","307","308","309","310","311","312","313","314","315","316","317","318","319","320","321","322","323","324","325","326","327","328","329","330","331","332","333","334","335","336","337","338","339","340","341","342","343","344","345","346","347","348","349","350","351","352","353","354","355","356","357","358","359","360","361","362","363","364","365","366","367","368","369","370","371","372","373","374","375","376","377","378","379","380","381","382","383","384","385","386","387","388","389","390","391","392","393","394","395","396","397","398","399","400","401","402","403","404","405","406","407","408","409","410","411","412","413","414","415","416","417","418","419","420","421","422","423","424","425","426","427","428","429","430","431","432","433","434","435","436","437","438","439","440"],["BOUSEK, MARK A","LINCOLN HOUSING AUTHORITY","OLDERBAK ENTERPRISES NORTH LLC","LINCOLN STUDENT PROPERTY LLC","MARCUS LINCOLN HOTEL LLC","EHC LANCASTER MANOR REAL ESTATE LLC","GARMEL PROPERTIES LLC","PELICAN FINANCE, LLC","CENTERSPACE LP","B &amp; J PARTNERSHIP LTD","JDHQ HOTELS LLC","WEST HAYMARKET HOLDING COMPANY LLC","KOLL INVESTMENT PROPERTIES LLC","CHRISTIAN RETIREMENT HOMES INC","SFI LTD PARTNERSHIP 25","FREMONT AT 84 LLC","48TH &amp; LEIGHTON I LLC","RAAJ LINCOLN OWNER LLC","CHATEAU &amp; CHARLESTON LLC","EAST LAKE FLATS II LLC","SFI LTD PARTNERSHIP I","TABITHA INC","TABITHA INC","SFI LTD PARTNERSHIP 47","LEGACY ESTATES LP","JOYCE HINKLEY LTD PARTNERSHIP","CA/ARGENT BLOCK 68 LINCOLN LLC","CHATEAU PROPERTIES NORTH LLC","HARBOUR WEST LLC","UNION AT ANTELOPE VALLEY LP","EAST LAKE FLATS III LLC","LEGACY LIMITED PARTNERSHIP LTD","NE-UNL HOLDINGS LLC D/B/A NEUNL HOLDINGS LLC","IMMANUEL RETIREMENT COMMUNITIES","WILDERNESS HILLS APARTMENTS LLC","VILLAGE GARDENS APARTMENT LLC","200 PROPERTIES LLC","CASTLEWOOD-PINNACLE SOUTH JORDAN LLC","CTW PROPERTY HOLDINGS LLC","BOARD OF REGENTS OF THE UNIVERSITY OF NEBRASKA","KNIGHT REBELS LLC","LINCOLN LOGS I LLC","CERVANTES INVESTMENTS LLC","EHC HOMESTEAD REAL ESTATE LLC","225 NORTH COTNER LLC","INVEST LINCOLN AV LLC","JFK INC","JFK INC","6800 A LLC","FOLSOM RIDGE LLC","HOLMES LAKE APARTMENTS LLC","7510 INVESTMENTS LLC","HLI DEVELOPMENT LLC","ARISTOS PROPERTIES LLC","NORTH POINTE VILLAS LLC","SABRA HEALTH CARE HOLDINGS III LLC","HOLT ENTERPRISES LLC","LODGING ENTERPRISES LLC","LEXINGTON RIDGE LLC","ANTELOPE GROUP VI","FOXTAIL GROUND LEASE LLC","OLDERBAK GEORGETOWN/WILLOWS LLC","EAST LAKE FLATS LLC","8801 LLC","AJC LLC","TABITHA INTERGEN LLC","COLORADO HOSPITALITY SVCS INC","1100 Y LLC","WOOD, WILLIAM J &amp; MYRNA L","AF-18R-LINCOLN LLC","JTT INVESTMENTS LLC","IRC II INC","WASSCO LLC","BOARD OF REGENTS","ABODE LLC","COMANDD LLC","HIGHWAY 2 DEVELOPMENT LLC","CHEE-VEE LIMITED PARTNERSHIP","AMBASSADOR LINCOLN THE","YANKEE WOODS RESIDENCES LLC","LODGE APARTMENTS HOLDINGS LLC","LINCOLN PUBLIC HOUSING INC","THOMASBROOK PROPERTY LP","VILLAS AT WILDERNESS RIDGE III LLC, THE","IRC III LLC","SAVANNAH PINES LLC","LINCOLN SENIOR APARTMENTS LLC","CHANTACLEER HOLDINGS LLC","LUND SUMMIT II LLC","TOMASEK-NOVAK INVESTMENTS","ANTELOPE GARDENS LTD","TDP PHASE TWO LLC","BRIDGEPORT APARTMENTS LP","MANOR OF LINCOLN INC","STARBRICK &amp; MORTAR COMMERCIAL BUILDING LLC","CANDID HOSPITALITY INC","FLATS AT SHADOW CREEK LLC","TAMARIN RIDGE APARTMENTS LLC","48TH STREET INVESTMENTS LLC","ELYSIUM LLC","CHANTACLEER LLC","PINE LAKE PARTNERS II LLC","LEW APARTMENTS LP","LENNOX LINCOLN LLC","LINCOLN WS PARTNERS LLC","BROADMOOR ROKEBY LLC","CHURCHILL PROPERTY PORTFOLIO OWNER LLC","TIMBERLAND NEBRASKA I LLP","ACADEMY LINCOLN PROJECT OWNER LLC","JCK ENTERPRISES LLC","TRAINWRECK'S LLC &amp; TOMASEK-NOVAK INVESTMENTS","VINE STREET APARTMENTS LLC","NORTHRIDGE PARTNERS II LLP","VSL LINCOLN SUMNER LLC","MEEV LODGING LLC","S B PARTNERS","SIGMA PHI EPSILON PROPERTIES LLC","TELEGRAPH FLATS LLC","LINCOLN ALF LTD","I-80 REAL ESTATE DEVELOPMENT LLC","LINCOLN 9421 PROPCO LLC","SKYLINE PARTNERS","PARK RIDGE APARTMENTS LLC","FOLKWAYS HOSPITALITY LLC","LIONSGATE PARTNERS LTD","MMW PARTNERS LLC","BCLINC LLC","NORTH POINTE VILLAS III LLC","BRUINGTON FAMILY TRUST, THE","GREGORY FAMILY TRUST","LOF LINCOLN LLC","CG APARTMENTS LLC","WOHLFARTH, CARL STEVEN REVOCABLE TRUST","KIMBALL FAMILY TRUST, THE","PARK RIDGE APARTMENTS TOO LLC","WATERBROOK APARTMENTS","ANTELOPE TOWER LLC","VILLAGE GARDENS HOTEL ASSOCIATES LLC","EDWARD ROSE DEVL CO LLC","TAMARIN LODGING LLC","CENTURY BUILDING LLC","SALT CREEK HOSPITALITY LLC","4D INVESTMENTS LLC","APPIAN WAY LODGING LLC","CHERRY HILL PROPERTIES L P","SAMPSON, A JOHN &amp; APRIL L 2015 FAMILY TRUST","NEBRASKA WESLEYAN UNIVERSITY","SALT CREEK SENIOR LIVING LP","DUANE HARTMAN INVESTMENTS INC","CORNHUSKER HOSPITALITY II LLC","MAC HOTEL GROUP III LLC","MAGNUM LLC","DUTT PROPERTIES INC","MID AMERICA HOLDING CO INC","HOUSE CORP DELTA TAU DELTA","GABEL, MICHAEL A REVOCABLE LIVING TRUST","NEAR SOUTH PROPERTIES LLC","A&amp;P II LLC","BONEY CORP OF LINCOLN","COMFED-DODGE FUND V","SOUTH LINCOLN APARTMENTS LTD","UNITED EQUITY LLC","H-4 CO LLC","HERBERG LLC","A2 INVESTMENTS LLC","SALT CREEK HOTEL ASSOCIATES LLC","PELICAN FINANCE LLP*","LINCOLN HOSPITALITY PARTNERS LLC","HIGHPOINTE APARTMENTS LTD","SAI PROPERTIES INC","LNK LODGING LLC","LNK2 LODGING LLC","CHATEAU DEVELOPMENT TERRACE LLC","CHATELAINE RESIDENCES LLC","SWV APTS LP","LINCOLN PORTFOLIO LLC","PAPA JOE INVESTMENT INC","VILLAGE WEST APARTMENTS LLC","GATEHOUSE ROWS LP","HOLROYD ENTERPRISES LLC","EAGLES LANDING APARTMENTS LLC","WALKER ST PROPERTIES LLC","RD BENTLEY RESIDENTIAL LLC","CAR CONNECTION INC, THE","LINCOLN VANDERVOORT LLC","SIGMA ALPHA EPSILON BLDG","GAMMA THETA OF NEBRASKA","MARANVILLE ENTERPRISES LLC","SKY PARK LINCOLN LLC","NORTH POINTE VILLAS II LLC","AG MEN LLC","TIMBERLINE LLC","HOUSING AUTHORITY OF THE CITY OF LINCOLN, THE","COMANDD LLC","REAL GROWTH LLC","GAMMA PHI BETA BLDG ASSN","ALPHA XI DELTA BLDG ASSN","VILLAGE SQUARE APARTMENTS LLC","HFT-RE LLC","TDP PHASE ONE LLC","BETA THETA PI BLDG ASSOCIATION","FALLBROOK ASSISTED LIVING LLC","SILVER CREEK INVESTMENTS LLC","WD BROCK LOFTS LLC","DELTA UPSILON BUILDING CORP","HEPBURN PROPERTIES LLC","VICTORY PARK LLC","SATGURU LLC","4HLG LLC","SAMPSON, RODNEY M","GANESH INC","LAKEVIEW ACQUISITIONS LLC","CAPITOL VILLA PARTNERS LLC","RIDGE HOLLOW PARTNERS LLC","JYOTI HOSPITALITY LLC","COUNTYSHIRE LP","MIDWEST VAN DORN LLC","CHI OMEGA BUILDING ASSOCIATION","SUMMIT MANAGEMENT GROUP LLC","MRS ENTERPRISES LLC","SIGMA CHAPTER HOUSE CORP FOR","KAPPA DELTA PI HOUSE CHAPTER","OHM SHIV CORP","BIRCH CREEK HOLDINGS LLC","DOLIN LLC","KAPPA HOUSE CRP OF DELTA","HEPBURN PROPERTIES LLC","PHI DELTA THETA HOUSE ASSN","LOT 31 LLC","MARANVILLE INVESTMENTS LLC","GURU HARGOBIND JI LLC","TABITHA ALF REAL ESTATE HOLDING INC","KAPPA HOUSE OF DELTA GAMMA","KAPPA ALPHA THETA BLDG ASSOC","ALPHA PHI HOUSE CORP BOARD","SUPERIOR PLACE APARTMENTS LTD","KRUEGER LAND HOLDINGS LLC","PRASHANT PROPERTIES INC","LINCOLN INVESTMENT LLC","HAYMARKET HOUSING DEV CORP","NEBRASKA TRIANGLE BLDG CORP","SIGMA NU BUILDING ASSOC","OGDEN, CHARLES W TRUST","TELEGRAPH LOFTS EAST LLC","MYSTIC PINES APARTMENTS, THE","FOUNTAIN GLEN PARTNERS","LAKSHMI INC","NORTHGLEN LP","WILLIAMSBURG PARK APTS LLC","WILLIAMSBURG PARK APTS LLC","JAI HANUMAN PROPERTIES LLC","OGDEN, CHARLES W TRUST","ALL IN ACQUISITIONS LLC","BASE LLC","SHRI HANUMAN PROPERTIES LLC","PI BETA PHI FHC - NEBRASKA BETA LLC","FILANU HOLDINGS LLC","SIGNATURE RENOVATIONS LLC","KNOLLS ASSISTED LIVING LP","PONCE PROPERTIES LLC","4HLG LLC","MJF CORP","BIRCH CREEK HOLDINGS LLC","4HLG LLC","ALPHA CHI OMEGA BLDG CORP","MADDOX, THOMAS G &amp; CLARK, RANDALL D TRUSTEES","PHARES, LAURA LYNN &amp; MADDOX, THOMAS G CO-TRUSTEES","PHARES, ROBERT C","UNION COLLEGE HOUSING INC","4521 CLAIRE AVE LLC","PEDCOR INVESTMENTS-2010-CXXVI LP","PEDCOR INVESTMENTS-2011-CXXXVII LP","MARIAN SISTERS DIOCESE OF LINC","PELICAN FINANCE LLC","SIGMA CHI BUILDING CO","ALPHA OMICRON PI BLDG","JST PROPERTIES LLC","MARANVILLE PROPERTIES LLC","BUEL PROPERTIES LLC","UNION COLLEGE","ASHBROOKE APARTMENTS LLC","HEARTLAND LIVING LLC","BOARD OF REGENTS UNIV OF NEBR","PIONEER HOUSING CORP","CAMBRIDGE APARTMENTS LLC","2521 N 9TH PARTNERS LLC","4009 CHARLOTTE PARTNERS LLC","PARKVIEW LINCOLN LLC","WAVERLY PROPCO LLC","LAXMI INC","CENTURY INVESTMENTS I LLC","GLENBROOK LLC","BLOCK 38 LLC","AMBAY INC","SMETTER CUSTOM HOMES INC","FLATS AT 84 LLC","NORTHLUND PROPERTIES LLC","CARRIAGE GLEN LLC","VKF HOLDINGS LLC","NEBRASKA ALPHA ALUMNI ASSN","MALONE COMMUNITY CENTER","HIGHLAND VIEW PARTNERS","SHREE SAI INC","BENTON ST INVESTMENTS LLC","NWU THETA CHI FRATERNITY BLDG","ZETA GAMMA HOUSE CORP","ORCHARD PARK INC","UNION AT MIDDLE CREEK LP","MEADOW WOOD LLLP","RIP INC","ADRAVEL INVESTMENT INC","COLONIAL HEIGHTS LIMITED PARTNERSHIP","R I P INC","STONY RIDGE (7100 ADAMS) LLC","THE WESLEY INVESTMENT LLC","LINCOLN MANOR CORP","AGD FRATERNITY HOUSING CORPORATION BETA ALPHA LLC","TRUSTEES OF BETA TAU OF DELTA","ASHLEY SQUARE LLC","SOMERSET APTS LTD","CASA FIESTA, LLC","LINCOLN INN HOTEL LLC","CHENEY INVESTMENTS LLC","NEW HAMPSHIRE PROPERTIES LLC","CENTURY INVESTMENTS I LLC","ELITE TOWNHOME RENTALS LLC","LINCOLN CARE GROUP LLC","ANIMANIACS GROUP LLC","100 YEAR HOMES INC","663 S19 STREET LLC","FORTUNE BUILDERS LLC","JOHN C BUSSEY #1 FAM LTD PRTNR","GMB44 LLC","TAILWIND WEST LAFAYETTE LLC","CARE YBE SUBSIDIARY LLC","LHL ONE LLC","LODGE HL PROPERTY LP","NORTHRIDGE PARTNERS VI","JBR3 LLC","SMITH, PAUL E &amp; PATRICIA E","ALPHA EPSILON ASSN OF THETA","JEFFERY, WILLIAM H &amp; LINDA M","WPLA LLC","HARTMANN FAMILY LLC","CHIRANJEEVI PROPERTIES LLC","OMKAR HOTELS INC","VILLAGE WEST APARTMENTS II LLC","SMK CORP","STORK, MARSHA E","CHARLES TRUST INC","BARBER, DAVID &amp; GEORGEAN JOINT TRUST","KIMBALL, KATHRYN A","VC INVESTMENTS LLC","MNT HOSPITALITY LLC","BLACK FOX INVESTMENTS LLC","ZETA PSI FRAT OMICRON CHAPTER","GONDRING WILLOW CREEK APARTMENTS LLC","BARBER, DAVID &amp; GEORGEAN JOINT TRUST","SALT CREEK APARTMENTS LP","HINKLEY, LLOYD D &amp; DONNA J","NK INVESTMENTS LLC","C &amp; D PROPERTIES","DOUBLE J REALTY &amp; MANAGEMENT INC","HINKLEY, LLOYD D &amp; DONNA J","NUTZMAN PROPERTIES LLC","BRANGEN INVESTMENTS LLC","WILLARD ALUMNAE ASSN INC","SAI HOSPITALITY INC","CSOM-ROSS LLC","IRONS, JACK LIFETIME TRUST","IRONWOOD PROPERTIES LLC","LINCOLN COUNTRYHOUSE III LLC","BOUSEK, MARK ALLEN","WESTERN MANOR LP","TJK INVESTMENTS INC","AN FAMILY REVOCABLE TRUST","CORRIDOR LLC, THE","TELEGRAPH LOFTS WEST LLC","L &amp; J RENTAL PROPERTIES LLC","G G W ENTERPRISES","TEN TWENTY SEVEN LLC","DILLON PROPERTIES 2 LLC","BARCLAY BAUMAN PROPERTIES LLC","H A WASSENBERG HOLDING COMPANY LLC","T D S INVESTMENTS","MEADOWLARK APARTMENTS LLC","OM-PATEL INC","FOXTAIL CENTRAL LP","CONDOR PROPERTIES LLC","WEDP 18TH AND K LLC","HURT PLAZA V LLC","LUMBERWORKS LOFTS LLC","JOYCE-HINKLEY LIMITED PTNRS II","LANCASTER DEVELOPMENT LLC","CAS-NEB-NEDA LLC","MAHOGANY HILL ENTERPRISES LLC","TREDZ CENTRAL PROPERTIES LLC","GMB RENTALS INC","NORTHRIDGE HEIGHTS PARTNERS","LINCOLN COUNTRYHOUSE LLC","MCHOMESOLUTIONS LLC","MAX ICONIC INVESTORS LLC","NEW ERA REAL ESTATE LLC","KEI PROPERTIES LLC","NGUYEN, DAO","CENTERPOINTE SOUTH STREET PROJECT LLC","HAVEN MANOR HICKMAN LLC","PINE LAKE HEIGHTS APARTMENTS","SCHMIDT, DOUGLAS","JOHN C BUSSEY #3 FAM LTD PRTNR","SK MANAGEMENT LLC","SAFE HARBOUR EAT - XXXVI LLC","SAMPSON PROPERTIES II LLC","BENES, ROGER V &amp; JILL S","V N LLC","SLP PROPERTIES LLC","INDIAN HILLS COMMUNITY CHURCH","WEDP 18TH &amp; K LLC","RAINTREE NEBRASKA GENERAL PART","HOMESTEAD RENTALS LLC","ASPEN HAUS INC","RCP SUMMIT I LLC","LUND SUMMIT III","REID HOLDINGS LLC","QUADPRO PROPERTIES LTD","ARGOSY PROPERTIES LLC","TAF INVESTMENTS LLC","GIGI RENTALS LLC","LINCOLN COUNTRYHOUSE II LLC","NEBRASKA ALPHA GAMMA SIGMA ALUMNI ASSOCIATION","SALT CREEK APARTMENTS 2 LP","HORNBY, RODNEY SCOTT TESTAMENTARY TRUST","ANDREW ROSS REAL ESTATE LLC","858 LLC","VBC INVESTMENTS LLC","FLATS TO LET LLC","DIETRICH, MICHAEL","JSSB LLC","HOSEK, RICHARD J &amp; SANDRA K","UPSILON OF PHI KAPPA TAU"],[0.01283282213745877,0.01202960328460472,0.00812558606956996,0.005977442625890545,0.005529134428948755,0.005454416396125123,0.005435736887919215,0.005379698363301491,0.005286300822271952,0.004781954100712436,0.004744595084300621,0.004707236067888805,0.004707236067888805,0.004632518035065173,0.004613838526859265,0.004371004920182462,0.004352325411976553,0.004296286887358829,0.004268267625049968,0.004034773772476118,0.00401609426427021,0.003941376231446579,0.003941376231446579,0.00392269672324067,0.003773260657593407,0.003698542624769775,0.003679863116563867,0.003623824591946143,0.003586465575534327,0.00347438852629888,0.003268913936033892,0.003212875411416169,0.00319419590321026,0.003156836886798444,0.003119477870386628,0.003063439345768905,0.003007400821151181,0.002876644263709825,0.002857964755503917,0.002857964755503917,0.002839285247298009,0.002839285247298009,0.002839285247298009,0.002839285247298009,0.002839285247298009,0.002820605739092101,0.002727208198062562,0.002727208198062562,0.002708528689856654,0.002671169673444838,0.002671169673444838,0.002615131148827114,0.002577772132415298,0.00255909262420939,0.002540413116003482,0.002540413116003482,0.002484374591385758,0.00246569508317985,0.002447015574973942,0.002447015574973942,0.002428336066768034,0.002428336066768034,0.002428336066768034,0.002409656558562126,0.002372297542150311,0.002372297542150311,0.002353618033944402,0.002316259017532586,0.002316259017532586,0.002297579509326679,0.002297579509326679,0.002297579509326679,0.002278900001120771,0.002260220492914862,0.002260220492914862,0.002260220492914862,0.002260220492914862,0.002260220492914862,0.002260220492914862,0.002241540984708955,0.002222861476503047,0.002222861476503047,0.002222861476503047,0.002204181968297139,0.002204181968297139,0.002204181968297139,0.002204181968297139,0.002185502460091231,0.002148143443679415,0.002110784427267599,0.002110784427267599,0.002073425410855783,0.002073425410855783,0.002073425410855783,0.002036066394443967,0.002036066394443967,0.002036066394443967,0.002017386886238059,0.002017386886238059,0.001961348361620335,0.001942668853414427,0.001942668853414427,0.001923989345208519,0.001923989345208519,0.001923989345208519,0.001923989345208519,0.001923989345208519,0.001905309837002612,0.001886630328796703,0.001867950820590796,0.001867950820590796,0.001867950820590796,0.001849271312384887,0.00183059180417898,0.00183059180417898,0.00183059180417898,0.001811912295973072,0.001811912295973072,0.001811912295973072,0.001793232787767164,0.001793232787767164,0.001774553279561256,0.001774553279561256,0.001774553279561256,0.001774553279561256,0.001774553279561256,0.001755873771355348,0.001755873771355348,0.001755873771355348,0.001755873771355348,0.001755873771355348,0.001755873771355348,0.00173719426314944,0.00173719426314944,0.00173719426314944,0.00173719426314944,0.001718514754943532,0.001681155738531716,0.001681155738531716,0.001662476230325808,0.001662476230325808,0.0016437967221199,0.001625117213913992,0.001625117213913992,0.001606437705708084,0.001606437705708084,0.001606437705708084,0.001606437705708084,0.001587758197502176,0.001587758197502176,0.001587758197502176,0.001569078689296268,0.001569078689296268,0.001569078689296268,0.00155039918109036,0.00155039918109036,0.00155039918109036,0.00155039918109036,0.00155039918109036,0.00155039918109036,0.00155039918109036,0.001531719672884452,0.001531719672884452,0.001531719672884452,0.001531719672884452,0.001531719672884452,0.001531719672884452,0.001513040164678544,0.001513040164678544,0.001513040164678544,0.001494360656472636,0.001475681148266728,0.001475681148266728,0.001475681148266728,0.001457001640060821,0.001457001640060821,0.001457001640060821,0.001457001640060821,0.001457001640060821,0.001438322131854913,0.001438322131854913,0.001438322131854913,0.001419642623649005,0.001419642623649005,0.001400963115443097,0.001382283607237189,0.001382283607237189,0.001382283607237189,0.001382283607237189,0.001382283607237189,0.001382283607237189,0.001344924590825373,0.001344924590825373,0.001344924590825373,0.001326245082619465,0.001326245082619465,0.001326245082619465,0.001326245082619465,0.001326245082619465,0.001307565574413557,0.001307565574413557,0.001307565574413557,0.001288886066207649,0.001288886066207649,0.001288886066207649,0.001288886066207649,0.001288886066207649,0.001288886066207649,0.001270206558001741,0.001270206558001741,0.001270206558001741,0.001251527049795833,0.001251527049795833,0.001251527049795833,0.001251527049795833,0.001251527049795833,0.001251527049795833,0.001232847541589925,0.001232847541589925,0.001232847541589925,0.001214168033384017,0.001214168033384017,0.001214168033384017,0.001214168033384017,0.001214168033384017,0.001195488525178109,0.001195488525178109,0.001176809016972201,0.001176809016972201,0.001176809016972201,0.001158129508766293,0.001158129508766293,0.001139450000560385,0.001139450000560385,0.001139450000560385,0.001139450000560385,0.001120770492354477,0.001120770492354477,0.001120770492354477,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001102090984148569,0.001083411475942661,0.001083411475942661,0.001083411475942661,0.001064731967736754,0.001064731967736754,0.001064731967736754,0.001046052459530845,0.001046052459530845,0.001046052459530845,0.001046052459530845,0.001046052459530845,0.001027372951324938,0.001027372951324938,0.001027372951324938,0.001027372951324938,0.001027372951324938,0.001027372951324938,0.001027372951324938,0.001027372951324938,0.001027372951324938,0.001027372951324938,0.001027372951324938,0.001008693443119029,0.001008693443119029,0.001008693443119029,0.001008693443119029,0.001008693443119029,0.001008693443119029,0.001008693443119029,0.001008693443119029,0.0009900139349131216,0.0009900139349131216,0.0009900139349131216,0.0009900139349131216,0.0009900139349131216,0.0009900139349131216,0.0009900139349131216,0.0009713344267072136,0.0009526549185013058,0.0009526549185013058,0.0009339754102953978,0.0009339754102953978,0.0009339754102953978,0.0009339754102953978,0.0009339754102953978,0.0009339754102953978,0.0009152959020894898,0.0009152959020894898,0.0009152959020894898,0.0009152959020894898,0.0009152959020894898,0.0009152959020894898,0.0009152959020894898,0.0008966163938835818,0.0008966163938835818,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.0008779368856776739,0.000859257377471766,0.000859257377471766,0.000859257377471766,0.000840577869265858,0.000840577869265858,0.000840577869265858,0.000840577869265858,0.00082189836105995,0.00082189836105995,0.0008032188528540421,0.0008032188528540421,0.0008032188528540421,0.0008032188528540421,0.0008032188528540421,0.0008032188528540421,0.0008032188528540421,0.0008032188528540421,0.0007845393446481341,0.0007845393446481341,0.0007845393446481341,0.0007658598364422262,0.0007658598364422262,0.0007471803282363182,0.0007471803282363182,0.0007471803282363182,0.0007471803282363182,0.0007471803282363182,0.0007285008200304103,0.0007285008200304103,0.0007285008200304103,0.0007285008200304103,0.0007285008200304103,0.0007285008200304103,0.0007285008200304103,0.0007285008200304103,0.0007285008200304103,0.0007285008200304103,0.0007191610659274563,0.0007098213118245023,0.0007098213118245023,0.0007098213118245023,0.0007098213118245023,0.0007098213118245023,0.0006911418036185943,0.0006911418036185943,0.0006911418036185943,0.0006911418036185943,0.0006724622954126864,0.0006724622954126864,0.0006724622954126864,0.0006724622954126864,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006537827872067785,0.0006351032790008705,0.0006351032790008705,0.0006351032790008705,0.0006351032790008705,0.0006351032790008705,0.0006351032790008705,0.0006164237707949625,0.0006164237707949625,0.0006164237707949625,0.0006164237707949625,0.0006164237707949625,0.0006164237707949625,0.0005977442625890545,0.0005977442625890545,0.0005790647543831466,0.0005790647543831466,0.0005790647543831466,0.0005790647543831466,0.0005790647543831466,0.0005790647543831466,0.0005790647543831466,0.0005603852461772387,0.0005603852461772387,0.0005603852461772387,0.0005603852461772387,0.0005603852461772387,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005417057379713307,0.0005230262297654227,0.0005230262297654227,0.0005230262297654227,0.0005230262297654227,0.0005230262297654227,0.0005043467215595147,0.0005043467215595147,0.0005043467215595147,0.0005043467215595147,0.0005043467215595147,0.0005043467215595147,0.0005043467215595147,0.0005043467215595147,0.0005043467215595147],[688,645,436,321,297,293,292,289,284,257,255,253,253,249,248,235,234,231,229.5,217,216,212,212,211,203,199,198,195,193,187,176,173,172,170,168,165,162,155,154,154,153,153,153,153,153,152,147,147,146,144,144,141,139,138,137,137,134,133,132,132,131,131,131,130,128,128,127,125,125,124,124,124,123,122,122,122,122,122,122,121,120,120,120,119,119,119,119,118,116,114,114,112,112,112,110,110,110,109,109,106,105,105,104,104,104,104,104,103,102,101,101,101,100,99,99,99,98,98,98,97,97,96,96,96,96,96,95,95,95,95,95,95,94,94,94,94,93,91,91,90,90,89,88,88,87,87,87,87,86,86,86,85,85,85,84,84,84,84,84,84,84,83,83,83,83,83,83,82,82,82,81,80,80,80,79,79,79,79,79,78,78,78,77,77,76,75,75,75,75,75,75,73,73,73,72,72,72,72,72,71,71,71,70,70,70,70,70,70,69,69,69,68,68,68,68,68,68,67,67,67,66,66,66,66,66,65,65,64,64,64,63,63,62,62,62,62,61,61,61,60,60,60,60,60,60,60,60,60,60,60,60,60,59,59,59,58,58,58,57,57,57,57,57,56,56,56,56,56,56,56,56,56,56,56,55,55,55,55,55,55,55,55,54,54,54,54,54,54,54,53,52,52,51,51,51,51,51,51,50,50,50,50,50,50,50,49,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,47,47,47,46,46,46,46,45,45,44,44,44,44,44,44,44,44,43,43,43,42,42,41,41,41,41,41,40,40,40,40,40,40,40,40,40,40,39.5,39,39,39,39,39,38,38,38,38,37,37,37,37,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,35,35,35,35,35,35,34,34,34,34,34,34,33,33,32,32,32,32,32,32,32,31,31,31,31,31,30,30,30,30,30,30,30,30,30,30,30,30,30,29,29,29,29,29,28,28,28,28,28,28,28,28,28],[32,456,67,1,1,1,67,289,4,10,1,1,44,5,8,3,2,1,15.5,3,8,5,5,9,1,3,1,4,1,1,2,1,1,3,3,1,62,1,1,1,74,10,11,1,1,2,4,4,1,6,2,3,1,4,2,3,2,1,3,5,10,7,3,3,8,1,1,1,25,1,13,1,7,1,11,3,1,21,1,3,5,1,5,1,1,3,3,2,1,4,5,2,3,1,2,1,3,3,1,2,3,3,1,1,1,4,1,5,3,21,3,3,4,1,1,1,1,1,1,1,1,3,4,1,4,3,4,2,1,1,1,1,3,4,4,4,1,1,4,1,1,1,4,1,7,2,18,1,81,1,1,7,1,1,1,3,8,2,1,3,4,83,9,1,1,1,83,1,3,1,1,1,7,1,2,10,1,2,6,15,4,17,10,7,1,1,1,12,1,3,1,73,59,2,72,1,1,8,1,1,1,1,36,1,1,7,1,1,36,1,1,2,68,2,1,9,1,1,22,6,1,1,1,1,1,1,2,1,1,22,1,1,1,1,1,4,2,1,1,1,1,1,10,1,3,2,1,5,2,2,1,10,15,4,1,1,1,5,2,57,38,3,1,37,1,3,3,3,1,3,4,4,1,56,1,1,3,19,3,20,3,55,2,1,2,1,1,1,1,1,5,1,1,1,51,1,3,1,9,1,1,2,2,12,1,1,1,1,2,2,1,1,2,1,2,1,1,1,3,2,48,1,1,7,2,46,1,1,45,8,44,2,2,5,1,2,2,2,35,29,1,17,1,16,1,2,1,1,2,3,3,2,11,1,40,1,2,3,1,8,14,1,21,8,31,29,1,1,37,10,37,1,3,2,5,18,2,1,2,3,2,1,36,1,2,2,1,7,35,4,1,1,3,34,1,4,3,13,1,1,4,3,18,2,2,2,1,1,6,6,5,3,2,24,30,11,1,2,1,7,1,1,9,1,1,2,7,2,1,1,1,28,12,28,17,4,5,11,28,1],["1360 PELICAN BAY PL","5700 R ST","5130 S 16 ST","Attn: TRINITAS VENTURES","Attn: BRIAN KRAMER","945 N CENTRAL AVE","510 WASHINGTON ST","C/O PARADIGM TAX GROUP","PO BOX 1988","340 VICTORY LN","Attn: ATRIUM HOSPITALITY","121 S 13 ST","8800 S 52 ST","6315 O ST","Attn: DONNA KNOELL","Attn: CLINT TAUBENHEIM","PO BOX 241468","Attn: AJ CAPITAL PARTNERS LLC, ED ZALINSKI","Attn: STEFAN GASPAR","8885 EXECUTIVE WOODS DR","Attn: DONNA KNOELL","4720 RANDOLPH ST","4720 RANDOLPH ST","10040 REGENCY CIR","8101 O ST","8101 O ST","Attn: FB TAX MANAGEMENT","3100 S 72 ST","Attn: HAVENPARK CAPITAL PARTNERS LLC","409 MASSACHUSETTS AVE","8885 EXECUTIVE WOODS DR","8101 O ST","ATTN:  SSC LINCOLN APARTMENTS LLC","1044 N 115 ST","7211 S 27 ST","PO BOX 23166","PO BOX 22486","Attn: JONATHAN WOODBURY/WOODBURY CORPORATION","Attn: TAILWIND GROUP INC","Attn: LINDA COWDIN","6830 MARCUS RD","PO BOX 31554","2626 WOODSDALE BLVD","945 N CENTRAL AVE","Attn: CLINT TAUBENHEIM","7211 S 27 ST","5600 CORNHUSKER HWY","5600 CORNHUSKER HWY","600 THIRD AVE","Attn: THE LUND COMPANY","809 N 96 ST","7510 GLYNOAKS DR","Attn: RICH GOSNELL","6555 PHEASANT RUN PL","7211 S 27 ST","Attn: NYE HEALTH SERVICES-JASON HARNISCH","5250 CORNHUSKER HWY","800-925 WEST GEORGIA ST","2855 S 70 ST","PO BOX 67100","5631 S 48 ST","5130 S 16 ST","7210 S 89 ST","8885 EXECUTIVE WOODS DR","12855 N 40 ST","4720 RANDOLPH ST","10 E 120 AVE","1532 COLLEGE AVE","808 D ST","Attn: P3 FOUNDATION INC","648 N 31 ST","1044 N 115 ST","PO BOX 5402","Attn: LINDA COWDIN - PROPERTY MGMT","1331 S 33 ST","601 S 18 ST","129 N 10 ST","PO BOX 67100","4405 NORMAL BLVD","8501 S 85TH ST","Attn: PERRY REID PROPERTIES","5700 R ST","Attn: BRIAR CAPITAL ACQUISITIONS LLC","7211 S 27","1044 N 115 ST","7101 S 82 ST","86 EAST RT 59","8200 CODY DR","Attn: THE LUND COMPANY","5649 S 31 ST","PO BOX 67100","440 N 8 ST","PO BOX A3951","20220 HARNEY ST","8200 CODY DR","7736 S DUQUESNE WAY","7211 S 27 ST","8885 EXECUTIVE WOODS DR","4800 HOLDREGE ST","8501 S 78 ST","8200 CODY DR","5825 S 14 ST","Attn: JAMES CARMICHAEL","3889 MAPLE AVE","3889 MAPLE AVE","809 N 96 ST","Attn: HOLIDAY RETIREMENT","Attn: DAN HOLBY","10 CAMPUS BLVD","653 SW PRAIRIE CREEK RD","5205 S 90TH ST","Attn: CONCORDE MGMT","Attn: C I P","20220 HARNEY ST","PO BOX 198","Attn: COMMERCIAL INVESTMENT PROP","PO BOX 6246","121 S 13 ST","7600 LANDMARK WAY","PO BOX 198","ATTN:  ALTUS GROUP","7211 S 27 ST","Attn: RIP INC","1551 28 AVE S","Attn: DONNA KNOELL","Attn: JOHN WATSON","245 S 84 ST","Attn: CLINT TAUBENHEIM","1170 PASADENA DR","4961 LOS PATOS","644 LOVETT SE","Attn: LUND COMPANY","5213 DEER RIDGE DR","13033 OLMEDA CT","Attn: RIP INC","PO BOX A3951","5631 S 48 ST","Attn: BRUCE KINSETH","PO BOX 3015","PO BOX 3847","Attn: CONCORD MGMT","PO BOX 896","Attn: CENTURY SALES &amp; MGMT","9240 ANDERMATT DR","Attn: JERRY C &amp; JANET C JOYCE","5825 S 14 ST","Attn: ACCOUNTS PAYABLE","11506 NICHOLAS ST","PO BOX 22787","Attn: GEORGE LEMKE, MANAGER","Attn: JOHN E KLIMPEL, MANAGER","12401 HAVELOCK AVE","4100 PIONEER WOODS DR","Attn: HOLMES LAKE MANOR","ATTN:  RYAN CALDWELL","Attn: HIP-KYLEE","7541 CROSS CREEK CT","8551 LEXINGTON AVE","Attn: GANESH HOTELS INC (CONTRACT)","Attn: NP DODGE MGMT CO","Attn: BROADMORE DEVELOPMENT","PO BOX 5946","3701 O ST","Attn: MIKE MOSER","225 N 50TH ST","2 QUAIL CREEK CIR","ATTN:  PARADIGM TAX GROUP","6007 NORMAN RD","809 N 96 ST","331 N COTNER BLVD","PO BOX 3847","ATTN: KIRTI K TRIVEDI, MANAGING MEMBER","3100 S 72 ST","8501 S 78 ST","11506 NICHOLAS ST","PO BOX 540491","12121 WILSHIRE BLVD","PO BOX 22151","5631 S 48 ST","5000 CENTRAL PARK DR","Attn: RIP INC","5733 S 34 ST","5000 BENTLEY DR","PO BOX 6661","18800 VON KARMAN","Attn: MATT ROBERTS","1433 R ST","7541 CROSS CREEK CT","5825 S 14 ST","Attn: CLINT TAUBENHEIM","705 ROAD 7","PO BOX 85521","5700 R ST","601 S 18 ST","PO BOX 84891","415 N 16 ST","1619 R ST","Attn: RIP INC","1902 HARLAN DR","440 N 8 ST","Attn: DREW STANGE","6600 JULIET CT","4747 UNION HILL RD","129 N 10 ST","ATTN:  RYAN PETERS","Attn: MARY HEPBURN O'SHEA","Attn: ONE BURLINGTON PLACE","19020 NICHOLAS CIR","Attn: JEFFREY W &amp; MARY L LEHMS","3730 S 14TH ST","2505 FAIRFIELD ST","Attn: CHRIS MARSH","117 S 25 ST","9200 ANDERMATT DR","1399 OHM ST","Attn: JERRY C JOYCE","Attn: WELLTOWER INC","Attn: BRENDA MAXWELL","7541 CROSS CREEK CT","112 S VIEW CIR","Attn: KANDY DENKER","405 UNIVERSITY TER","2940 NW 12 ST","Attn: VINCE HOEHNE","Attn: VINCE HOEHNE","3911 LOWELL AVE","2039 Q ST","Attn: RANDY KATHOL","440 N 8 ST","7541 CROSS CREEK CT","2767 W AMINI WAY","4720 RANDOLPH ST","3220 RIVERSIDE DR","940 PIEDMONT RD","1531 S ST","Attn: NP DODGE MANAGEMENT COMPANY","8501 S 78 ST","Attn: DHARMISTHA DESAI","1399 OHM ST","Attn: CONCORDE MANGT &amp; DEV. INC","705 N 8 ST","1710 S 181 ST","1256 FALL CREEK RD","121 S 13 ST","Attn: RIP INC","7211 S 27 ST","1010 W BOND ST","1600 BROADWAY","Attn: COMMERCIAL INVESTMENT PROP.","Attn: COMMERCIAL INVESTMENT PROP","4221 INDUSTRIAL AVE","1256 FALL CREEK RD","8227 S CHERRYWOOD DR","3910 S 40TH ST","4231 INDUSTRIAL AVE","1154 TOWN &amp; COUNTRY COMMONS DR","PO BOX 1949","10002 SILVER MAPLE RD","11506 NICHOLAS ST","6550 REBEL DR","9645 IRON GATE CT","Attn: REGAL BUILDING SYSTEMS","104 E OMAHA AVE","Attn: JEFFREY W LEHMS","Attn: NICHOLE PALMER","Attn: CENTURY MGMT","Attn: CENTURY MGMT","Attn: CENTURY MGMT","3800 S 48 ST","6555 PHEASANT RUN PL","PO BOX 574","ATTN:  MAUREEN HOUGLAND","6765 N 112 ST","PO BOX 800729","PO BOX 95141","Attn: JACKIE HEINTZ","1933 PATTERSON CT","7541 CROSS CREEK CT","18400 S 54TH ST","3800 S 48 ST","809 N 96 ST","1440 W PLUM ST","Attn: PROPERTY MANAGEMENT","Attn: WELLS FARGO CENTER","Attn: JASON OPP","1 E ARMOUR BLVD","1 E ARMOUR BLVD","1 E ARMOUR BLVD","265 E MERRICK RD","2505 FAIRFIELD ST","2855 S 70","129 N 10 ST","Attn: GOLDENROD COMPANIES","1744 M ST","9700 THORNWOOD CIR","7211 S 27 ST","4101 N 40 ST","11606 NICHOLAS ST","21707 DEERHAVEN TRL","ATTN:  ALUMNI TREASURER","Attn: RHF","Attn: C I P","Attn: GUESTHOUSE INN  C/O VICTOR PATEL","5733 S 34 ST","2800 N 50 ST","626 N 16 ST","Attn: CARNER, VIRGIL L","Attn: SAM HURLEY","27124 GRUMMAND AVE","1542 S 1 ST","2505 FAIRFIELD ST","Attn: ROBERTA E HAIGHT","1542 S 1 ST","6555 PHEASANT RUN PL","PO BOX 8305","4535 NORMAL BLVD","8710 N MERIDIAN ST","1023 O ST","120 COLLEGE PARK CIR","14705 DREXEL ST","ATTN:  PARADIGM TAX GROUP","PO BOX 83821","PO BOX 12269","5733 S 34 ST","2855 S 70 ST","8391 STIRRUP CT","ATTN:  OMAHA CARE GROUP LLC","6550 REBEL DR","500 WINDSOR DR","PO BOX 198","2045 S FOLSOM ST","PO BOX 22080","5580 W MILL RD","530 S FRONT ST","Attn: LINCOLN BICKFORD COTTAGE- BRYAN CLEGG","Attn: BRIAR CAPITAL ACQUISITIONS LLC","Attn: MICHAEL JONATHAN LAUER - LODGE HL PROPERTY LP ET AL; BRIAR CAPITAL ACQUISITIONS","Attn: C I P","PO BOX 80266","PO BOX 30056","Attn: ALUMNI PRESIDENT","740 S 48 ST","209 S 9 ST","Attn: KLAUS HARTMANN","2001 W O ST","2901 NW 12 ST","4969 W GARY GATELY ST","1901 SW 5 ST","131 NW 14 ST","Attn: CONCORDE MANAGEMENT","6620 SUMNER ST","13033 OLMEDA CT","1500 LATHAM ST","2801 W O ST","8230 CODY DR","PO BOX 22888","Attn: WILLIAM H GONDRING III","6620 SUMNER ST","11506 NICHOLAS ST","7318 SHERMAN ST","9217 FAIRBANKS CT","Attn: C I P","1205 HIGH ST","7318 SHERMAN ST","1255 W DOLORES CT","7909 S 35 ST","Attn: JUDY EICHER","6750 WILDCAT DR","PO BOX 80266","2142 N COTNER BLVD","3228 SALT CREEK CIR","25 AVENIDA DE ORINDA","1360 PELICAN BAY PL","1600 BROADWAY","720 N 27 ST","1041 UPCHURCH FARM LN","1358 SHIRE LN","121 S 13 ST","1623 E 18 ST","731 WHITETAIL LN","5200 N 20 ST","Attn: LUND COMPANY","4620 PIONEER GREENS CT","120 COLLEGE PARK CIR","Attn: CONCORDE MGMT","4433 S 133 ST","2732 O ST","5631 S 48TH ST","PO BOX 4746","Attn: RED PRAIRIE MGMT","Attn: JENNIFER &amp; KEVIN HURT","Attn: NELNET-MEGAN BOLMER","8101 O ST","8410 EXECUTIVE WOODS DR","906 OLIVE ST","2330 RIDGE RD","PO BOX 127","5580 W MILL RD","7211 S 27 ST","25 AVENIDA DE ORINDA","2840 S 70, STE 7","1321 N 9 ST","PO BOX 4198","Attn: PAULINA NGUYEN, MANAGER","Attn: PAULINA NGUYEN, MANAGER","Attn: TOPHER HANSEN","ATTN: GUS E PEACH III","7211 S 27 ST","601 S 18 ST","PO BOX 22080","5421 S 93 PL","Attn: NEBRASKA TITLE COMPANY C/O SAFE HARBOUR","5825 S 14 ST","2840 S 70 ST, STE 7","C/O GRANT THORNTON LLP","515 NW 7 ST","1000 S 84 ST","Attn: RED PRAIRIE MGMT","7211 S 27 ST","Attn: RED PRAIRIE MGMT","Attn: ROSS HECHT","Attn: JOHN LUND","Attn: THE LUND COMPANY","310 APACHE DR","Attn: ASSOCIATED MANAGEMENT","Attn: BRENT","21707 DEERHAVEN TRL","3701 CALVERT ST","25 AVENIDA DE ORINDA","5505 310 ST","11506 NICHOLAS ST","5801 S 58 ST","6830 MARCUS RD","PO BOX 6844","7511 WILLARD AVE","PO BOX 57042","13501 W WINDRIDGE LN","PO BOX 6844","3901 N 42 ST","Attn: MICHAEL CAMERON"],[null,null,null,"201 MAIN ST","100 E WISCONSIN AVE",null,null,"PO BOX 800729",null,null,"12735 MORRIS ROAD EXT",null,null,null,"10040 REGENCY CIR","7211 S 27 ST",null,"133 N JEFFERSON ST","3100 S 72 ST",null,"10040 REGENCY CIR",null,null,"STE 200","STE 100","STE 100","1 N LASALLE ST",null,"51 W CENTER ST","STE 300",null,"UNIT 100","PO BOX 11277","STE 500",null,null,null,"2733 E PARLEYS WAY","530 S FRONT ST","1901 Y ST",null,null,null,null,"7211 S 27 ST",null,null,null,"FL 21","450 REGENCY PKWY",null,null,"9240 ANDERMATT DR",null,null,"2230 N SOMERS AVE",null,"VANCOUVER","STE 200",null,"STE 220",null,null,null,null,null,null,"UNIT F19",null,"200 QUEBEC ST",null,"STE 500",null,"1901 Y ST",null,"APT 100","CAPITOL HALL",null,null,"STE A","9200 ANDERMATT DR",null,"45 ROCKEFELLER PLZ",null,"STE 500",null,null,"STE F","450 REGENCY PKWY","UNIT 2",null,"STE 140",null,null,"STE F",null,null,null,null,"STE A","UNIT F",null,"795 RIDGE LAKE BLVD","STE 300","STE 300",null,"631 W MORSE BLVD","8500 NORMANDALE LAKE BLVD",null,null,null,"1314 O ST","7211 S 27 ST",null,null,"7211 S 27 ST",null,"STE 201","UNIT 504",null,"PO BOX 92129",null,"1542 S 1 ST","STE L","10040 REGENCY CIR","2855 S 70 ST","STE 316","7211 S 27 ST",null,null,"STE A","450 REGENCY PKWY",null,null,"1542 S 1 ST",null,"STE 220","2 QUAIL CREEK CIR",null,null,"1314 O ST",null,"2855 S 70 ST",null,"8101 O ST",null,"5000 SAINT PAUL AVE","STE 100",null,"2851 N BOULDER CANYON","9240 ANDERMATT DR",null,null,"6101 NORMAL BLVD","PO BOX 5951","5000 CENTRAL PARK DR",null,null,"16118 WOODCREST CIR","8701 W DODGE RD","801 N 96 ST",null,"STE B1","1242 PELICAN BAY",null,null,"PO BOX 800729",null,null,null,null,"222 S 15 ST,  STE 401N",null,"STE A","STE 100",null,"STE 535",null,"STE 220","STE 204","1542 S 1 ST","STE 500",null,null,"STE A","3121 CEDAR AVE",null,null,null,"7211 S 27 ST","PO BOX 481",null,null,"STE 100",null,null,null,"1542 S 1 ST",null,"STE 140","1248 O ST",null,null,null,"PO BOX 540501","2039 Q ST","1004 FARNAM ST",null,"4301 INDUSTRIAL AVE",null,null,"130 NEWPORT CENTER DR",null,null,null,"8101 O ST","4500 DORR ST","5395 KATLEMAN DR",null,null,"616 N 16 ST",null,null,"104 E OMAHA AVE","104 E OMAHA AVE",null,null,"1801 S 183 CIR","STE 140",null,null,null,"STE A-2",null,null,"8701 W DODGE RD","STE A","5130 FOX GLOVE CIR",null,"1314 O ST",null,null,null,"STE 201","1542 S 1 ST",null,null,"STE 2000","7211 S 27 ST","7211 S 27 ST",null,null,null,null,null,null,null,null,"STE 100",null,null,"1901 SW 5 ST","STE 5","9645 IRON GATE CT","3033 GEORGIAN CT","2855 S 70 ST","2855 S 70 ST","2855 S 70 ST","BLDG A",null,null,"PO BOX 574",null,"C/O PARADIGM TAX GROUP",null,"5390 VIRGINIA WAY",null,null,null,null,null,null,"1901 Y ST","1248 O ST","2855 S 70 ST",null,null,null,"STE 205",null,"STE 200","UNIT 107","14606 BRANCH ST",null,null,null,null,"STE 100",null,"PO BOX 82866","911 N STUDEBAKER RD","7211 S 27 ST","1140 W CORNHUSKER HWY","STE 500",null,null,"3110 S 48 ST","409 MASSACHUSETTS AVE",null,null,null,"27124 GRUMMAND AVE",null,null,null,"STE 255",null,null,null,null,"PO BOX 800729",null,null,"STE 500",null,null,"PO BOX 820528",null,null,null,"STE A",null,null,"STE 100","13795 S MUR-LEN RD","45 ROCKEFELLER PLAZA","45 ROCKEFELLER PLAZA","7211 S 27 ST",null,null,"1535 R ST",null,null,"6105 ANDREW CT",null,null,null,"UNIT 100","UNIT 5","1314 O ST",null,null,null,null,null,null,"1345 VILLAGE DR",null,"STE 100",null,null,"7211 S 27 ST",null,null,null,null,"10101 EDGEWATER LN",null,null,null,null,null,null,"STE 2000",null,null,null,"STE 201",null,null,null,"450 REGENCY PKWY",null,null,"1314 O ST","STE 45704",null,"STE 220",null,"12020 SHAMROCK PLZ","705 S 18 ST","121 S 13 ST","STE 100","STE F","PH 3",null,null,null,null,null,"BOX 162",null,null,"2540 SOUTHVIEW CIR","2540 SOUTHVIEW CIR","2633 P ST","PO BOX 6125",null,"APT 100",null,null,"14680 W DODGE RD",null,"UNIT 236","PO BOX 3264",null,null,"12020 SHAMROCK PLZ",null,"12020 SHAMROCK PLZ","3500 FAULKNER DR","450 REGENCY PKWY","450 REGENCY PKWY",null,"9200A ANDERMATT DR","6555 PHEASANT RUN PL",null,null,null,null,"STE 100","STE B",null,null,null,null,null,null,null,"500 W BEAL ST"],["LINCOLN","LINCOLN","LINCOLN","LAFAYETTE","MILWAUKEE","WOODMERE","LINCOLN","DALLAS","MINOT","LINCOLN","ALPHARETTA","LINCOLN","LINCOLN","LINCOLN","OMAHA","LINCOLN","OMAHA","CHICAGO","LINCOLN","LINCOLN","OMAHA","LINCOLN","LINCOLN","OMAHA","LINCOLN","LINCOLN","CHICAGO","LINCOLN","OREM","INDIANAPOLIS","LINCOLN","LINCOLN","CHICAGO","OMAHA","LINCOLN","LINCOLN","LINCOLN","SALT LAKE CITY","MANKATO","LINCOLN","LINCOLN","OMAHA","LINCOLN","WOODMERE","LINCOLN","LINCOLN","LINCOLN","LINCOLN","NEW YORK","OMAHA","OMAHA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","FREMONT","LINCOLN",null,"LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","DAVEY","LINCOLN","NORTHGLENN","MANHATTAN","LINCOLN","DENVER","LINCOLN","OMAHA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","NEW YORK","LINCOLN","OMAHA","LINCOLN","SPRING VALLEY","LINCOLN","OMAHA","LINCOLN","LINCOLN","LINCOLN","CHICAGO","ELKHORN","LINCOLN","AURORA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","MEMPHIS","DALLAS","DALLAS","OMAHA","WINTER PARK","MINNEAPOLIS","NEWTOWN SQUARE","BENTON","LINCOLN","LINCOLN","LINCOLN","ELKHORN","PLATTE","LINCOLN","LINCOLN","LINCOLN","GREENWOOD VILLAGE","PLATTE","SOUTHLAKE","LINCOLN","LINCOLN","GRAND FOLKS","OMAHA","LINCOLN","LINCOLN","LINCOLN","LOS OSOS","HUNTINGTON BEACH","GRAND RAPIDS","OMAHA","EAGLE","SAN DIEGO","LINCOLN","CHICAGO","LINCOLN","NORTH LIBERTY","KALAMAZOO","OMAHA","LINCOLN","CAREFREE","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","OMAHA","LINCOLN","MESA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","OMAHA","OMAHA","OMAHA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","NORTH LIBERTY","DALLAS","LINCOLN","OMAHA","LINCOLN","OMAHA","OMAHA","LINCOLN","LINCOLN","OMAHA","OMAHA","LOS ANGELES","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","IRVINE","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","YORK","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","BELLEVUE","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","OMAHA","LINCOLN","OMAHA","ELKHORN","LINCOLN","LINCOLN","LINCOLN","NEWPORT BEACH","OMAHA","LINCOLN","COUNCIL BLUFFS","LINCOLN","TOLEDO","LINCOLN","LINCOLN","ASHLAND","LINCOLN","LINCOLN","LINCOLN","NORFOLK","NORFOLK","LINCOLN","LINCOLN","OMAHA","LINCOLN","LINCOLN","SOUTH JORDAN","LINCOLN","COLUMBUS","LINCOLN","LINCOLN","OMAHA","LINCOLN","LINCOLN","COUNCIL BLUFFS","LINCOLN","BEATRICE","OMAHA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","DENVER","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","TOWN &amp; COUNTRY","NORTH PLATTE","LITTLETON","OMAHA","LINCOLN","LINCOLN","LINCOLN","NORFOLK","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","CARMEL","CARMEL","WAVERLY","DALLAS","LINCOLN","BRENTWOOD","LINCOLN","LINCOLN","HICKMAN","LINCOLN","OMAHA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","KANSAS CITY","KANSAS CITY","KANSAS CITY","VALLEY STREAM","LINCOLN","LINCOLN","LINCOLN","OMAHA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","OMAHA","EAGLE","LINCOLN","LONG BEACH","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","INDIANAPOLIS","TEA","LINCOLN","LINCOLN","TEA","LINCOLN","LINCOLN","FAYETTEVILLE","LINCOLN","INDIANAPOLIS","GENEVA","LINCOLN","OMAHA","DALLAS","LINCOLN","PORTLAND","LINCOLN","LINCOLN","RAPID CITY","VANCOUVER","LINCOLN","PAPILLION","EAGLE","LINCOLN","LINCOLN","RAYMOND","MANKATO","OLATHE","NEW YORK","NEW YORK","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","SAN DIEGO","LINCOLN","LINCOLN","LINCOLN","LINCOLN","ST JOSEPH","LINCOLN","OMAHA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","ORINDA","LINCOLN","DENVER","LINCOLN","CARY","EAGLE","LINCOLN","ATLANTIC","ASHLAND","LINCOLN","OMAHA","LINCOLN","LINCOLN","LINCOLN","OMAHA","LINCOLN","LINCOLN","LINCOLN","OMAHA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","SAINT LOUIS","LINCOLN","CORTLAND","RAYMOND","LINCOLN","ORINDA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","OMAHA","LINCOLN","LINCOLN","OAK BROOK","LINCOLN","LINCOLN","OMAHA","LINCOLN","OMAHA","LINCOLN","OMAHA","OMAHA","MCCOOK","LINCOLN","LINCOLN","EAGLE","LINCOLN","ORINDA","MURDOCK","OMAHA","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN","LINCOLN"],["NE","NE","NE","IN","WI","NY","NE","TX","ND","NE","GA","NE","NE","NE","NE","NE","NE","IL","NE","NE","NE","NE","NE","NE","NE","NE","IL","NE","UT","IN","NE","NE","IL","NE","NE","NE","NE","UT","MN","NE","NE","NE","NE","NY","NE","NE","NE","NE","NY","NE","NE","NE","NE","NE","NE","NE","NE",null,"NE","NE","NE","NE","NE","NE","NE","NE","CO","KS","NE","CO","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NY","NE","NE","NE","NY","NE","NE","NE","NE","NE","IL","NE","NE","CO","NE","NE","NE","NE","NE","NE","TN","TX","TX","NE","FL","MN","PA","KS","NE","NE","NE","NE","SD","NE","NE","NE","CO","SD","TX","NE","NE","ND","NE","NE","NE","NE","CA","CA","MI","NE","NE","CA","NE","IL","NE","IA","MI","NE","NE","AZ","NE","NE","NE","NE","NE","NE","NE","AZ","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","IA","TX","NE","NE","NE","NE","NE","NE","NE","NE","NE","CA","NE","NE","NE","NE","NE","NE","NE","CA","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","CA","NE","NE","IA","NE","OH","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","UT","NE","OH","NE","NE","NE","NE","NE","IA","NE","NE","NE","NE","NE","NE","NE","NE","CO","NE","NE","NE","NE","NE","NE","NE","MO","NE","CO","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","IN","IN","NE","TX","NE","TN","NE","NE","NE","NE","NE","NE","NE","NE","NE","MO","MO","MO","NY","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","CA","NE","NE","NE","NE","NE","NE","IN","SD","NE","NE","SD","NE","NE","AR","NE","IN","NE","NE","NE","TX","NE","OR","NE","NE","SD","WA","NE","NE","NE","NE","NE","NE","MN","KS","NY","NY","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","CA","NE","NE","NE","NE","MO","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","CA","NE","CO","NE","NC","NE","NE","IA","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","MO","NE","NE","NE","NE","CA","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","IL","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","CA","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE","NE"],["68528","68505","68512","47901","53202","11598","68502","75380","58702","68528","30004","68508","68516","68510","68114","68512","68124","60661","68506","68512","68114","68510","68510","68114","68510","68510","60602","68506","64057","46204","68512","68510","60611","68154","68512","68542","68542","84109","56001","68588-0605","68516","68131","68502","11598","68512","68512","68507","68507","10016","68114","68114","68516","68526","68516","68512","68025","68504",null,"68510","68506","68516","68512","68526","68512","68336","68510","80233","66502","68502","80230","68503","68154","68505","68588-0605","68510","68502","68508","68506","68506","68516","68526","68505","10111","68512","68154","68516","10977","68512","68114","68516","68506","68508","60690","68022","68512","80016","68512","68512","68504","68516","68512","68512","38120","75219","75219","68114","32789","55437","19073","67017","68526","68508","68512","68022","57369","68512","68506","68508","80111","57369","76092","68512","68502","58201","68114","68506","68510","68512","93402","92649","49506","68114","68347","92128","68502","60690","68516","52317","49003","68103","68508","85377","68506","68526","68510","68512","68504","68154","68542","85207","68526","68527","68506","68506","68505","68504","68516","68505","68135","68114","68114","68505","68510","68528","68504","52317","75380","68512","68114","68505","68103","68102","68506","68516","68154","68154","90025","68542","68516","68504","68502","68516","68516","68506","92612","68502","68508","68516","68512","68512","68467","68501","68505","68508","68501","68508","68508","68502","68005","68508","68508","68521","68516","68508","68154","68503","68102","68022","68504","68502","68521","92660","68131","68526","51503","68510","43615","68521","68516","68003","68508","68508","68521","68701","68701","68506","68503","68130","68508","68516","84905","68510","43221","68510","68508","68114","68516","68521","51503","68508","68310","68130","68510","68508","68502","68512","68521","80202","68512","68512","68504","68510","68510","68506","68504","63017","69101","80129","68154","68516","68526","68522","68701","68526","68502","68506","68506","68506","68506-4300","68516","46032-0574","46032","68462","75380","68508","37027","68522","68516","68372","68506","68114","68522","68588-0605","68508","68506","64111","64111","64111","11580","68521","68506","68508","68154","68508","68512","68512","68504","68154","68347","68501","90815","68512","68521","68516","68504","68508","68516","46204","57064","68502","68521","57064","68502","68516","72701","68506","46260","68361","68505","68137","75380","68501","97212","68516","68506","57702","98682","68516","68046","68347","68522","68542","68428","56001","66062","10111","10111","68512","68501","68503","68508","68510","68508","68512","68528","68521","68528","68522","68528","68508","68506","92128","68521","68528","68512","68542-2888","64506","68506","68154","68506-4600","68516","68512","68502","68506-4600","68523","68516","68527","68504","68501","68505","68504","94563","68528","80202","68503","27519","68347","68508","50022","68003","68521","68114","68526","68505","68508","68137","68510","68516","68504","68154","68508","68508","68510","68512","63101","68512","68331","68428","68512","94563","68506","68508","68504","68512","68512","68503","68506","68512","68508","68542","68526","68154","68512","68506","60522","68528","68510","68154","68512","68154","68516","68114","68114","69001","68526","68516","68437","68506","94563","68407","68154","68516","68516","68506","68505","68505","68528","68506","68504","68521"],["Local","Local","Local","Out of State","Out of State","Out of State","Local","Out of State","Out of State","Local","Out of State","Local","Local","Local","Nebraska","Local","Nebraska","Out of State","Local","Local","Nebraska","Local","Local","Nebraska","Local","Local","Out of State","Local","Out of State","Out of State","Local","Local","Out of State","Nebraska","Local","Local","Local","Out of State","Out of State","Local","Local","Nebraska","Local","Out of State","Local","Local","Local","Local","Out of State","Nebraska","Nebraska","Local","Local","Local","Local","Nebraska","Local","Unknown","Local","Local","Local","Local","Local","Local","Local","Local","Out of State","Out of State","Local","Out of State","Local","Nebraska","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Out of State","Local","Nebraska","Local","Out of State","Local","Nebraska","Local","Local","Local","Out of State","Nebraska","Local","Out of State","Local","Local","Local","Local","Local","Local","Out of State","Out of State","Out of State","Nebraska","Out of State","Out of State","Out of State","Out of State","Local","Local","Local","Nebraska","Out of State","Local","Local","Local","Out of State","Out of State","Out of State","Local","Local","Out of State","Nebraska","Local","Local","Local","Out of State","Out of State","Out of State","Nebraska","Nebraska","Out of State","Local","Out of State","Local","Out of State","Out of State","Nebraska","Local","Out of State","Local","Local","Local","Local","Local","Nebraska","Local","Out of State","Local","Local","Local","Local","Local","Local","Local","Local","Nebraska","Nebraska","Nebraska","Local","Local","Local","Local","Out of State","Out of State","Local","Nebraska","Local","Nebraska","Nebraska","Local","Local","Nebraska","Nebraska","Out of State","Local","Local","Local","Local","Local","Local","Local","Out of State","Local","Local","Local","Local","Local","Nebraska","Local","Local","Local","Local","Local","Local","Local","Nebraska","Local","Local","Local","Local","Local","Nebraska","Local","Nebraska","Nebraska","Local","Local","Local","Out of State","Nebraska","Local","Out of State","Local","Out of State","Local","Local","Nebraska","Local","Local","Local","Nebraska","Nebraska","Local","Local","Nebraska","Local","Local","Out of State","Local","Out of State","Local","Local","Nebraska","Local","Local","Out of State","Local","Nebraska","Nebraska","Local","Local","Local","Local","Local","Out of State","Local","Local","Local","Local","Local","Local","Local","Out of State","Nebraska","Out of State","Nebraska","Local","Local","Local","Nebraska","Local","Local","Local","Local","Local","Local","Local","Out of State","Out of State","Local","Out of State","Local","Out of State","Local","Local","Local","Local","Nebraska","Local","Local","Local","Local","Out of State","Out of State","Out of State","Out of State","Local","Local","Local","Nebraska","Local","Local","Local","Local","Nebraska","Nebraska","Local","Out of State","Local","Local","Local","Local","Local","Local","Out of State","Out of State","Local","Local","Out of State","Local","Local","Out of State","Local","Out of State","Nebraska","Local","Nebraska","Out of State","Local","Out of State","Local","Local","Out of State","Out of State","Local","Nebraska","Nebraska","Local","Local","Local","Out of State","Out of State","Out of State","Out of State","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Out of State","Local","Local","Local","Local","Out of State","Local","Nebraska","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Out of State","Local","Out of State","Local","Out of State","Nebraska","Local","Out of State","Nebraska","Local","Nebraska","Local","Local","Local","Nebraska","Local","Local","Local","Nebraska","Local","Local","Local","Local","Out of State","Local","Nebraska","Local","Local","Out of State","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Local","Nebraska","Local","Local","Out of State","Local","Local","Nebraska","Local","Nebraska","Local","Nebraska","Nebraska","Nebraska","Local","Local","Nebraska","Local","Out of State","Nebraska","Nebraska","Local","Local","Local","Local","Local","Local","Local","Local","Local"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Owner<\/th>\n      <th>Pct of County Units<\/th>\n      <th>N Units<\/th>\n      <th>N Properties<\/th>\n      <th>Address1<\/th>\n      <th>Address2<\/th>\n      <th>City<\/th>\n      <th>State<\/th>\n      <th>Zip<\/th>\n      <th>Classification<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"targets":2,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatPercentage(data, 2, 3, \",\", \".\", null);\n  }"},{"className":"dt-right","targets":[2,3,4]},{"orderable":false,"targets":0},{"name":" ","targets":0},{"name":"Owner","targets":1},{"name":"Pct of County Units","targets":2},{"name":"N Units","targets":3},{"name":"N Properties","targets":4},{"name":"Address1","targets":5},{"name":"Address2","targets":6},{"name":"City","targets":7},{"name":"State","targets":8},{"name":"Zip","targets":9},{"name":"Classification","targets":10}],"order":[],"autoWidth":false,"orderClasses":false,"rowCallback":"function(row, data, displayNum, displayIndex, dataIndex) {\nvar value=data[4]; $(this.api().cell(row, 4).node()).css({'background':isNaN(parseFloat(value)) || value <= 1.000000 ? '' : 'linear-gradient(90.000000deg, transparent ' + Math.max(456.000000 - value, 0)/455.000000 * 100 + '%, #c7c8ca ' + Math.max(456.000000 - value, 0)/455.000000 * 100 + '%)','background-size':'95% 90%','background-repeat':'no-repeat','background-position':'center'});\nvar value=data[3]; $(this.api().cell(row, 3).node()).css({'background':isNaN(parseFloat(value)) || value <= 28.000000 ? '' : 'linear-gradient(90.000000deg, transparent ' + Math.max(688.000000 - value, 0)/660.000000 * 100 + '%, #c7c8ca ' + Math.max(688.000000 - value, 0)/660.000000 * 100 + '%)','background-size':'95% 90%','background-repeat':'no-repeat','background-position':'center'});\nvar value=data[10]; $(row).css({'background-color':value == \"Local\" ? \"#fc9272\" : value == \"Nebraska\" ? \"#fee0d2\" : value == \"Out of State\" ? \"#ffffff\" : value == \"Unknown\" ? \"#ffffff\" : null});\n}"}},"evals":["options.columnDefs.0.render","options.rowCallback"],"jsHooks":[]}</script>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    const typesetMath = (el) => {
+      if (window.MathJax) {
+        // MathJax Typeset
+        window.MathJax.typeset([el]);
+      } else if (window.katex) {
+        // KaTeX Render
+        var mathElements = el.getElementsByClassName("math");
+        var macros = [];
+        for (var i = 0; i < mathElements.length; i++) {
+          var texText = mathElements[i].firstChild;
+          if (mathElements[i].tagName == "SPAN") {
+            window.katex.render(texText.data, mathElements[i], {
+              displayMode: mathElements[i].classList.contains('display'),
+              throwOnError: false,
+              macros: macros,
+              fleqn: false
+            });
+          }
+        }
+      }
+    }
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        for (let i = 0; i < 2; i++) {
+          container.appendChild(note.children[i].cloneNode(true));
+        }
+        typesetMath(container);
+        return container.innerHTML
+      } else {
+        typesetMath(note);
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      typesetMath(note);
+      return note.innerHTML;
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -1,0 +1,488 @@
+---
+title: "Who Owns Lincoln?"
+author: "Susan Vanderplas"
+format: html
+execute:
+  cache: true
+  echo: false
+  message: false
+  warning: false
+  out-width: 100%
+---
+
+
+```{r setup}
+#| include: false
+#| cache: false
+
+library(tidyr)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+library(ggforce)
+library(ggthemes)
+library(stringr)
+library(readxl)
+library(geojsonio)
+library(DT)
+library(skimr)
+library(naniar)
+library(sf)
+common_proj4string <- "+proj=longlat +datum=WGS84"
+ggplot2::theme_set(theme_bw())
+```
+```{r}
+lc_data1 <- read_xlsx("data/SusanVanderPlas.xlsx")
+lc_data2 <- read_xlsx("data/SusanVanderPlas-New.xlsx")
+lc_data1_fix <- lc_data1 %>%
+  rename(PrimaryUseDesc = PrimeUseDesc, PropertyClassDesc = Prop_ClassDesc, TotalAcres = Total_Acres, SitusAddress = Situs)
+lc_data <- full_join(lc_data1_fix, lc_data2)
+rm(lc_data1_fix, lc_data1, lc_data2)
+
+```
+
+```{r shapefile-processing}
+if (!file.exists("data/lincoln-shapes.Rdata")) {
+  shapefile_list <- list.files("data/shapefiles/", full.names = T)
+
+  read_zip_sf <- function(file){
+    tmp <- tempdir()
+    unzip(file, exdir = tmp)
+    res <- try(read_sf(tmp, layer = "Ownership Parcels"))
+    if ("try-error" %in% class(res)) {
+      return(data.frame())
+    } else {
+      return(res)
+    }
+  }
+  shapefiles <- purrr::map_df(shapefile_list, read_zip_sf)
+
+  shapefiles <- shapefiles %>% unique()
+
+  parcels <- shapefiles %>% st_drop_geometry() %>% unique()
+  # Join shapefiles that have the same parcel ID
+  shapes <- shapefiles %>%
+    select(PARCELID) %>%
+    mutate(geometry = st_make_valid(geometry)) %>%
+    group_by(PARCELID) %>%
+    summarize(geometry = st_union(geometry)) %>%
+    mutate(geometry = st_transform(geometry, common_proj4string)) %>%
+    left_join(parcels)
+
+  save(shapes, file = "data/lincoln-shapes.Rdata")
+} else {
+  load("data/lincoln-shapes.Rdata")
+}
+
+missing_parcels <- lc_data %>%
+  mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
+  separate(PropertyClassDesc, c("PropertyClass", "PropertyClassStatus"), remove = F)  %>%
+  anti_join(shapes, by = c("Parcel_ID"= "PARCELID", "SitusAddress" = "SITEADDRES"))
+
+property_data <-  lc_data %>%
+  mutate(Parcel_ID = str_remove_all(Parcel_ID, "-")) %>%
+  separate(PropertyClassDesc, c("PropertyClass", "PropertyClassStatus"), remove = F)  %>%
+  left_join(shapes, by = c("Parcel_ID"= "PARCELID", "SitusAddress" = "SITEADDRES"))
+
+map_data <- property_data %>%
+  select(Parcel_ID, PropertyClass, PropertyClassStatus, Owner, Own_City, Own_State, ResTypeDesc, ImpType, Foundation, geometry)
+```
+
+```{r}
+#| label: context-maps
+#| fig-cap: Base map for showing analysis results
+#| fig-width: 6
+#| fig-height: 8
+#| out-width: 100%
+#| cache: true
+
+county_features <- st_read("data/lancaster-co-features.geojson") %>%
+  st_transform(common_proj4string)
+
+municipal_boundaries <- st_read("data/municipal-boundaries.geojson") %>%
+  st_transform(common_proj4string)
+  
+basemap <- ggplot() +
+  theme_map() +
+  ggtitle("Lancaster County, NE") +
+  geom_sf(data = filter(county_features, type == "county" & IDName != "Lancaster"),
+          fill = "grey80", alpha = 0.5) +
+  geom_sf(data = filter(county_features, type == "river"),
+          color = "blue", alpha = .5) +
+  geom_sf(data = filter(county_features, type == "lakes"),
+          color = "blue", fill = "blue", alpha = .5) +
+  geom_sf(data = filter(county_features, type == "roads"),
+          color = "grey50", alpha = .25) +
+  geom_sf(data = filter(county_features, type == "municipal"),
+          color = "grey50", fill = "grey50", alpha = .125) +
+  geom_sf_text(data = filter(county_features, type == "municipal"),
+               aes(label = IDName),
+               size = 2, nudge_y = 0.01, nudge_x = 0.01)
+
+```
+# Introduction
+
+
+## Primary Question: Who Owns Lincoln?
+
+In order to promote action on housing affordability in Lancaster County, it is important to understand who the players are: to build consensus, we will need cooperation between government entities, landlords, and tenants. Right now, it is the landlords who are the unknown quantity: are most units in Lancaster county owned by small-time landlords with 1-3 single units or duplexes? Or is the rental space dominated primarily by large, out of state investment companies?
+
+All sources of data at the county level will be incomplete in some way: the property tax data does not indicate whether a home is used as a rental property or is owner-occupied. Large landlords may be more likely to have properties which are registered with the city housing authority, but this is not a guarantee.
+
+
+## Data Sources
+
+Data contributing to this analysis is described in [Property Data Description](property-data-description.qmd). 
+Data supporting maps was sourced from a number of public resources provided by the state of Nebraska and Lancaster county.
+Property assessment parcel data was obtained from the county assessor's office.
+Parcel GIS data was obtained from https://maps.lincoln.ne.gov/default/index.html?viewer=GISViewer using systematic manual downloads with the draw rectangle tool; some parcels did not have corresponding GIS information, either due to the manual nature of the download or due to mismatches within the different databases; this missingness should only affect displayed maps.
+
+
+## Property Class Type
+
+@fig-land-use-map shows the property class type as listed in the assessor's database for all regions with corresponding spatial information. 
+
+```{r}
+#| label: fig-land-use-map
+#| fig-cap: "Map of property class type, for properties with corresponding spatial regions in the database."
+#| fig-width: 6
+#| fig-height: 8
+#| out-width: 100%
+#| cache: true
+
+prop_type_pal <- c(Residential = "#8EB8E5", Commercial = "#272932", Ag = "#CAFFB9")
+basemap +
+  geom_sf(data = map_data,
+          aes(geometry = geometry, fill = PropertyClass, color = PropertyClass), alpha = .5) +
+  scale_fill_manual("Property Class", values = prop_type_pal) +
+  scale_color_manual("Property Class", values = prop_type_pal) +
+  theme(legend.position = "left")
+
+```
+
+# Property Assessment Data
+
+## Constructing Owner Occupancy
+The property tax data includes the owner's address as well as the site address; it stands to reason that if the owner occupies the premises, the owner's address will match the site address.
+Not all entries have a site address, however, most entries without a site address are unimproved properties, as shown in @fig-missing-site-addr-summary.
+Unimproved properties do not have buildings and thus most likely do not contain current residents, and so, for the purposes of this analysis, we can ignore these properties.
+
+```{r}
+#| label: fig-missing-site-addr-summary
+#| fig-cap: Assessment of missing site addresses. While there are missing/unassigned addresses across all categories, missing addresses are primarily found in unimproved properties, which are unlikely to have residents.  IOLL is an acronym for 'improvement on leased land', where the renter adds an improvement, such as a building or shed, and the renter is taxed for the improvement while the landowner pays taxes on the land separately.
+
+has_site_addr_summary <- property_data %>%
+  mutate(has_site_addr = !is.na(SitusAddress)) %>%
+  group_by(PropertyClass, PropertyClassStatus, has_site_addr) %>%
+  summarize(count = n()) %>%
+  ungroup()
+
+ggplot(has_site_addr_summary, aes(x = PropertyClass, color = PropertyClassStatus, fill = PropertyClassStatus, alpha = has_site_addr, y = count)) +
+  geom_col() +
+  scale_color_discrete("Property Status") +
+  scale_fill_discrete("Property Status") +
+  scale_alpha_manual("Site Address", values = c(.5, 1)) +
+  ggtitle("Property Address Listed") +
+  ylab("# Properties") +
+  xlab("Property Type")
+```
+
+```{r}
+#| label: tbl-missing-site-addr-table
+#| fig-cap: Assessment of impact of missing site addresses for Improved/IOLL properties.
+tmp <- has_site_addr_summary %>% filter(PropertyClassStatus != "Unimproved") %>%
+  mutate(has_site_addr = c("No Address", "Site Address")[has_site_addr+1]) %>%
+  pivot_wider(names_from = has_site_addr, values_from = count)
+tmp %>%
+  bind_rows(tibble(PropertyClass = "Total", PropertyClassStatus = "Total", as_tibble(t(colSums(tmp[,3:4]))))) %>%
+  knitr::kable(row.names = F, caption = "Improved and IOLL properties with no address make up less than 1% of all properties in the database.")
+```
+
+```{r improve-prop-data}
+improved_property_data <- property_data %>%
+  filter(PropertyClassStatus != "Unimproved") %>%
+  filter(PropertyClass %in% "Residential" | PrimaryUseDesc == "Acreage" | str_detect(ComBldgTypeDesc, "01|02|03|04|29|50|51|58|63|90")) %>%
+  mutate(own_occupied = str_detect(fixed(SitusAddress), fixed(Own_Address1)) %>%
+           if_else(is.na(.), FALSE, .)) %>%
+  mutate(own_occupied = if_else(own_occupied, "Owner\nOccupied", "Not Owner\nOccupied"))
+```
+
+This analysis proceeds ignoring unimproved properties and with the assumption that properties without a specified address are a relatively small contribution to the overall analysis. 
+
+
+As acreages are typically classed as residential properties even when in agricultural areas, we will remove agricultural areas from the remainder of the analysis unless they are classed as acreages.
+Not all commercial buildings will be apartments; of the commercial building classifications in the data set, the following appear to be "residential" or at least partially residential in nature:
+
+- 01-Apartment
+- 02-Student Apartment
+- 03-Senior and Community Living
+- 04-Hotel/Motel
+- 29-Residence on Commercial Account
+- 50-Fraternity House
+- 51-Nursing Home
+- 58-Apt over Commercial
+- 63-Community Living
+- 90-Mobile Home Courts
+
+The following analysis considers only commercial properties with the above classifications.
+
+If the first owner address field (`Own_Address1`) is at least partially contained within the site address (`SitusAddress`), then the property is considered owner-occupied. 
+For example, if the Owner's address is listed as `6121 S 97 ST`, and the Site address is listed as `6121 S 97TH ST, LINCOLN, NE  68526`, the property would be considered owner-occupied.
+
+
+```{r}
+#| label: fig-owner-occupied-summary
+#| fig-cap: Assessment of whether properties are owner-occupied, based on whether the owner's address matches (or partially matches) the site address. If no site address is present in the data, the owner-occupied status is set to FALSE, with the assumption that an official mailing address has not been assigned for the parcel because it is under-developed or unoccupied.
+
+owner_occupied_summary <- improved_property_data %>%
+  group_by(PropertyClass, own_occupied) %>%
+  reframe(count = n()) %>%
+  group_by(PropertyClass) %>%
+  mutate(prop = count/sum(count))
+
+ggplot(owner_occupied_summary, aes(x = own_occupied, fill = PropertyClass, y = count)) +
+  geom_col() +
+  ggtitle("Owner and Property Address Correspondence") +
+  ylab("Number of Properties") +
+  theme(axis.title.x = element_blank()) + 
+  scale_fill_discrete("Property Type")
+```
+
+
+```{r}
+#| label: fig-owner-occupied-map
+#| fig-cap: Map of owner-occupied properties in Lancaster county. Properties which are commercial and do not involve housing (e.g. retail, industry) and agricultural properties that are not listed as acreages are excluded from this map.
+#| fig-width: 6
+#| fig-height: 8
+#| cache: true
+
+basemap +
+  geom_sf(data = improved_property_data,
+          aes(geometry = geometry, fill = own_occupied, color = own_occupied), alpha = .5) +
+  scale_fill_manual("", values = c("#b35806", "#542788")) + 
+  scale_color_manual("", values = c("#b35806", "#542788")) + 
+  theme(legend.position = "top") +
+  ggtitle("Residential Buildings in Lancaster County, NE")
+
+```
+
+
+## Owner Types
+
+One interesting facet of this data is that properties can be owned by many different types of entities - individuals, LLCs, incorporated companies, life estates, and trusts, among others.
+While it is certainly possible for a house to be owned by a trust and not rented out (e.g. for estate planning purposes), it seems reasonable to create a variable indicating whether residential properties are owned by an individual/single family. 
+To do this, we will flag any property where the Owner name includes acronyms such as INC, LLC, LLP, LTD, and LP, or words such as community, company, corp, authority, university, investment, or apartments.
+
+A separate variable will be created to flag properties which are owned by estates and trusts - these properties may be investment vehicles (e.g. in the case of a family trust which generates income from real estate investment/rental properties), but are also commonly used for estate planning and/or providing for relatives who depend on social programs such as SSDI, SSI, and Medicare/Medicaid.
+One exception to this classification is if the owner name contains 'real estate', which would indicate ownership by a company rather than the type of family investment situation we hope to examine. 
+
+```{r}
+#| label: fig-owner-investment-summary
+#| fig-cap: Assessment of whether properties are owned by commercial/legal entities, such as corporations, LLCs, companies, or trust/estate vehicles.
+
+investment_regex = "\\W(INC|LLC|LTD|CORP|LP|COMMUNIT|COMPANY|LLP|REM|INT|AUTHORITY|BOARD|UNIVERSITY|INVESTMENT|APARTMENTS)"
+re_regex = "REAL ESTATE"
+estate_regex = "\\W(ESTATE|TRUST)"
+
+improved_property_data <- improved_property_data %>%
+  mutate(own_investment = 
+           str_detect(str_to_upper(Owner), investment_regex) | 
+           str_detect(str_to_upper(Owner), re_regex),
+         own_estate = 
+           str_detect(str_to_upper(Owner), estate_regex) & 
+           !str_detect(str_to_upper(Owner), re_regex),
+         own_investment = if_else(own_investment, "Corp", "Indiv"),
+         own_estate = if_else(own_estate, "Estate", "Not Estate"),
+         own_type = if_else(own_estate == "Estate", "Estate", own_investment))
+
+own_investment_summary <- improved_property_data %>%
+  select(Parcel_ID, own_occupied, own_investment, own_estate, own_type) %>%
+  group_by(Parcel_ID) %>%
+  unique() %>%
+  filter(!is.na(own_occupied)) %>%
+  group_by(own_occupied, own_type) %>%
+  reframe(count = n())
+
+ggplot(own_investment_summary, aes(x = own_type, y = count, fill = own_occupied)) +
+  # facet_wrap(~own_occupied) +
+  geom_col(color = "black", position = "dodge") +
+  geom_text(aes(label = count, x = own_type, y = count + 1000), position = position_dodge(width = 1)) +
+  scale_fill_manual("Occupant", values = c("grey80","grey50")) +
+  ggtitle("Investment Indicators and Property Address Correspondance") +
+  xlab("Ownership") +
+  ylab("# Properties") +
+  theme(legend.position = 'inside', 
+        legend.position.inside = c(0, 1), 
+        legend.justification.inside = c(0, 1), 
+        legend.background = element_rect(fill = "transparent"))
+```
+
+We can see from @fig-owner-investment-summary that most properties owned by LLCs/corporations are not owner-occupied, but that approximately half of those owned by estates/trusts are owner-occupied, and about 3/5 of the properties owned by individuals are owner-occupied.
+
+
+
+## Properties per Owner
+
+Examining the properties per owner is somewhat difficult, in part because some parcels list multiple owners and some owners have multiple parcels, and to make this more complicated, parcels can be combined to host a single house (think of situations where someone buys an adjacent lot to use as a yard in close-packed neighborhoods).
+This is all to say that any attempts to estimate the number of properties per owner will have edge cases that are counted incorrectly.
+In order to account for parcels with multiple owners and houses that have multiple parcels, a weight value was calculated such that for each unique parcel with the same site address, the weight for that parcel/address combination was 1, and for each unique site address, the weight for the address itself was 1. So a single address split into 2 parcels, where one parcel has 2 owners would have weight values (.5, .25, .25).
+These weight values are then used in the calculation of number of properties; this creates fractional properties that hopefully provide a better estimate given the peculiarities of the existing data.
+
+
+```{r counting-properties-per-owner}
+#| include: false
+#| message: false
+#| warning: false
+#| echo: false
+
+
+if (!file.exists("data/owner_info.Rdata")) {
+  owner_info <- improved_property_data %>%
+    select(-OWNERNME1) %>%
+  unique() %>%
+  mutate(SitusAddress = if_else(is.na(SitusAddress), LegalDescription, SitusAddress)) %>%
+  group_by(SitusAddress, Parcel_ID) %>%
+  mutate(weight = 1/n()) %>%
+  group_by(SitusAddress) %>%
+  mutate(weight = 1/sum(weight)) %>%
+  group_by(Owner, Own_Address1, Own_Address2, Own_Address3, Own_City, Own_State, Own_Zip, Own_UnitNumber) %>%
+  mutate(
+    weighted_no_units = if_else(is.na(ComNoUnits), weight, weight*ComNoUnits),
+    n_own_properties = sum(weight),
+    n_own_units = sum(weighted_no_units)) %>%
+  nest(property = -c(starts_with("Own"), n_own_properties, n_own_units)) %>%
+  ungroup()
+
+  save(owner_info, file = "data/owner_info.Rdata")
+} else {
+  load("data/owner_info.Rdata")
+}
+
+
+rental_info <- owner_info %>%
+  arrange(desc(n_own_units)) %>%
+  select(Owner, n_own_units, n_own_properties, own_occupied, Own_Address1, Own_Address2, Own_City, Own_State, Own_Zip) %>%
+  unique() %>%
+  mutate(n_own_properties_adj = n_own_properties - !str_detect(own_occupied, "Not"),
+         n_own_units_adj = n_own_units - !str_detect(own_occupied, "Not"),
+         pct_own_units = n_own_units_adj/sum(n_own_units_adj), 
+         in_state = Own_State == "NE", 
+         in_county = Own_City %in% str_to_upper(municipal_boundaries$IDName), 
+         local = if_else(in_state, if_else(in_county, "Local", "Nebraska"), "Out of State") %>%
+           replace_na_with("Unknown")) %>%
+  select(-matches("in_"), -own_occupied)
+
+
+```
+
+Then, we remove any properties which are owner-occupied and where the owner has only one unit. 
+That is, an owner-occupied complex with 8 units would still be included in this data set of units which are likely available for rent. 
+@fig-properties-per-owner shows the distribution of property ownership for non-owner-occupied properties in Lancaster county. There are <200 entities who own 4-5 properties, and the number of entities at each level of property ownership decreases sharply as the number of properties increases.
+
+```{r properties-per-owner}
+#| label: fig-properties-per-owner
+#| fig-cap: Distribution of property ownership portfolio size, for those who own at least one unit that they do not reside in. There are considerably more individuals who own only one (additional) property, with an approximately exponential decrease in number of owners as number of properties owned decreases. 
+xbreaks <- unique(round(10^seq(min(log10(owner_info$n_own_properties), na.rm = T), 
+                               max(log10(owner_info$n_own_properties), na.rm = T), 
+                               length.out = 100)))
+
+rental_info %>%
+  filter(n_own_units_adj >= 1) %>%
+ggplot(aes(x = n_own_properties_adj)) + 
+  geom_histogram(breaks = xbreaks) + 
+  ylab("# owners") + 
+  xlab("Number of non-owner-occupied properties owned") + 
+  ggtitle("Lancaster County Property Ownership Distribution") + 
+  facet_zoom(xlim = c(0, 50), ylim = c(0, 300), show.area = F, zoom.size = 1)
+```
+However, this is only part of the total picture, as each property can contain only a single unit or hundreds of rental units. 
+@fig-units-per-owner shows the distribution of number of units owned by each individual entity.
+
+
+```{r units-per-owner}
+#| label: fig-units-per-owner
+#| fig-cap: Distribution of unit ownership portfolio size, for those who own at least one property that they do not reside in. Log-scale breaks are used on the x-axis in order to provide more precision at smaller x-axis values while still allowing for assessment of the distribution as the number of units owned increases. 
+xbreaks <- unique(round(10^seq(0, 
+                               max(log10(rental_info$n_own_units_adj), na.rm = T), 
+                               length.out = 100)))
+
+y_breaks <- 10^(-1:6)
+y_minor_breaks <- c(c(3, 5, 7) %*% t(c(1, 10, 100, 1000, 10000, 100000)))
+
+rental_info %>%
+ggplot(aes(x = n_own_units_adj)) + 
+  geom_histogram(breaks = xbreaks) + 
+  scale_y_log10(breaks = y_breaks, labels = y_breaks, minor_breaks = y_minor_breaks) +
+  ylab("# owners/companies") +  
+  xlab("Number of non-owner-occupied units") + 
+  ggtitle("Lancaster County Unit Ownership Distribution")
+```
+
+## Large Landlords
+
+In many situations, it is important to assess how much outreach an organization could do with the available resources; as a result, it is also important to determine how much of Lancaster county's properties are owned by "large landlords" - for the purposes of this assessment, landlords who own at least 0.05% of the properties in the county. 
+This is addressed in @fig-large-small-landlords.
+
+
+```{r}
+#| label: fig-large-small-landlords
+#| fig-cap: Local, small-time landlords control more than half of the approximately 90000 units available in Lancaster county which are not owner-occupied. Large companies (defined as companies who control more than 0.05% of available rental units in Lancaster county) control approximately 37% of the available units. Local, large rental companies based in the county control 23% of available units.
+tmp <- rental_info %>%
+  mutate(big = pct_own_units >= 0.0005) %>%
+  mutate(big = ifelse(big, "Large Landlords", "Small Landlords") %>%
+           factor(levels = c("Large Landlords", "Small Landlords"), ordered = T)) %>%
+  group_by(local, big) %>%
+  summarize(n_own_units = sum(n_own_units),
+            n_own_units_adj = sum(n_own_units_adj),
+            n_own_properties = sum(n_own_properties),
+            n_entities = n(),
+            pct_units = sum(pct_own_units)) %>%
+  ungroup() 
+tmp2 <- tmp %>%
+  group_by(big) %>%
+  summarize(n_own_units = sum(n_own_units),
+            n_own_units_adj = sum(n_own_units_adj),
+            n_own_properties = sum(n_own_properties),
+            n_entities = n(),
+            pct_units = sum(pct_units))
+
+ggplot() + 
+  geom_col(data = tmp, aes(x = 1, y =  n_own_units_adj, fill = local, group = big), width = .85) +
+  geom_col(data = tmp2, aes(x = 1, y = n_own_units_adj, color = big), fill = "transparent", linewidth = 1, width = .9, position = position_stack()) + 
+  geom_text(data = tmp2, aes(x = 1.5, y = c(70000, 30000), color = big, label = big)) + 
+  scale_fill_manual(values = c("#d00000", "#E26666", "#c7c8ca", "#249ab5")) +
+  scale_color_manual(values = c("#666666", "#000000")) +
+  coord_flip() + 
+  theme(axis.ticks.y = element_blank(), axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  ylab("Number of Units (not owner-occupied)") + 
+  guides(color = "none", fill = guide_legend("Owner Location"))
+```
+
+A table of these landlords is provided below. 
+
+
+```{r big-landlord-tbl}
+big_landlords <- rental_info %>%
+  filter(pct_own_units > 0.0005) %>%
+  select(Owner, pct_own_units, n_own_units, n_own_properties, starts_with("Own_"), local)
+
+big_landlords %>%
+  set_names(c("Owner", "Pct of County Units", "N Units", "N Properties", "Address1", "Address2", "City", "State", "Zip", "Classification")) %>%
+  DT::datatable(caption = "Table of individuals and companies who own at least 0.05% of the units in Lincoln. Lancaster county (local) based entities are highlighted in red, Nebraska based entities are highlighted in light red, and out-of-state entitites are shown in white") %>% 
+  formatPercentage('Pct of County Units', 2) %>%  
+  formatStyle('N Properties', 
+              background = styleColorBar(big_landlords$n_own_properties, '#c7c8ca'), 
+              backgroundSize = '95% 90%', 
+              backgroundRepeat = 'no-repeat', backgroundPosition = 'center') %>%
+  formatStyle('N Units', 
+              background = styleColorBar(big_landlords$n_own_units, '#c7c8ca'), 
+              backgroundSize = '95% 90%', 
+              backgroundRepeat = 'no-repeat', backgroundPosition = 'center') %>%
+  formatStyle('Classification', 
+              target = 'row', 
+              backgroundColor = styleEqual(c('Local', 'Nebraska', 'Out of State', "Unknown"), 
+                                           c("#fc9272", "#fee0d2", "#ffffff", "#ffffff")))
+```
+
+
+

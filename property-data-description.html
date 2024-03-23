@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.489">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Susan Vanderplas">
+
+<title>Lincoln Property Assessment Data</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="property-data-description_files/libs/clipboard/clipboard.min.js"></script>
+<script src="property-data-description_files/libs/quarto-html/quarto.js"></script>
+<script src="property-data-description_files/libs/quarto-html/popper.min.js"></script>
+<script src="property-data-description_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="property-data-description_files/libs/quarto-html/anchor.min.js"></script>
+<link href="property-data-description_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="property-data-description_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="property-data-description_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="property-data-description_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="property-data-description_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Lincoln Property Assessment Data</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Susan Vanderplas </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="data-acquisition" class="level2">
+<h2 class="anchored" data-anchor-id="data-acquisition">Data Acquisition</h2>
+<section id="land-use-map" class="level3">
+<h3 class="anchored" data-anchor-id="land-use-map">Land Use Map</h3>
+<p>A land use geojson file was obtained from Lincoln’s open data site (<a href="https://opendata.lincoln.ne.gov/datasets/9f1248c80d9a41caa55da937ad002d86_1">link</a>).</p>
+<p>This data does not appear to have parcel numbers, so it is not as useful as anticipated.</p>
+</section>
+<section id="contextual-maps" class="level3">
+<h3 class="anchored" data-anchor-id="contextual-maps">Contextual Maps</h3>
+<p>A map of Nebraska roads was obtained from Nebraska’s <a href="https://www.nebraskamap.gov/datasets/dc69abca3b1a43749dea2141a3544bc9_0/explore">open data site</a> to provide contextual cues for generated maps. Smaller roads were added from Lancaster county’s <a href="https://opendata.lincoln.ne.gov/datasets/a7dae9fff57a4c978084dd46cb287006/explore?location=40.773129%2C-96.760113%2C15.26">street data</a>.</p>
+<p>A map of Nebraska rivers was obtained from the state <a href="https://www.nebraskamap.gov/datasets/defabeec3a4946c7a0a4fbd279f64e17_0/explore?location=29.038537%2C-77.039422%2C5.50">open data site</a> for additional contextual information. Lakes and other static bodies of water were acquired using <a href="https://www.nebraskamap.gov/datasets/db03cd43fece4933b8fb9727243a6aa9_0/explore?location=41.974545%2C-100.079057%2C7.07">waterbodies data</a></p>
+<p>A map of <a href="https://www.nebraskamap.gov/datasets/f8f32ae0dd254524a81477c656e3e469_0/explo.re?location=41.376390%2C-99.634600%2C6.61">nebraska counties</a> was obtained and used to crop the roads and rivers information to Lancaster county in order to save space and allow for upload of the dependent data files to GitHub. Municipal boundaries were sourced from <a href="https://www.nebraskamap.gov/datasets/ecc5102303b948aea73b0b4ebcce66b0_0/explore">state records</a> and added for additional context.</p>
+<p>This information allows us to create a base map, shown below in <a href="#fig-context-maps" class="quarto-xref">Figure&nbsp;1</a>.</p>
+<div class="cell" data-hash="property-data-description_cache/html/fig-context-maps_5d4b7bae5fdef877c8634df410b8a267">
+<div class="cell-output-display">
+<div id="fig-context-maps" class="quarto-figure quarto-figure-center anchored" width="100%">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-context-maps-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="property-data-description_files/figure-html/fig-context-maps-1.png" class="img-fluid figure-img" style="width:100.0%">
+</div>
+<figcaption class="figure quarto-float-caption quarto-float-fig" id="fig-context-maps-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Base map for showing analysis results
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="property-assessment-records" class="level3">
+<h3 class="anchored" data-anchor-id="property-assessment-records">Property Assessment Records</h3>
+<p>Two xlsx files were acquired from Doug R. Guess of the Lancaster County GIS office on 2024-03-13; the total cost of the database search was $60 (+ $2 processing fee). The information is publicly available at https://app.lincoln.ne.gov/aspx/cnty/cto/, but assembling the full dataset would require assembling data from approximately 1.7576^{4} queries; it was deemed reasonable to pay for the data rather than assemble it manually.</p>
+<ul>
+<li>data/SusanVanderplas.xlsx contains 126479 rows and 126479 columns, including the following columns not present in the initial data file: PrimeUseDesc, PrimeUse, Situs, Prop_ClassDesc, Total_Acres</li>
+<li>data/SusanVanderplas-New.xlsx contains 128511 rows and 128511 columns, including the following columns not present in the initial data file: PrimaryUseDesc, SitusAddress, PropertyClassDesc, TotalAcres, ComBldgNo, ComBldgTypeDesc, ComNoUnits</li>
+</ul>
+<p>Further analysis shows that</p>
+<ul>
+<li><code>PrimeUseDesc</code> and <code>PrimaryUseDesc</code> have the same 28 levels (and are thus most likely duplicated columns)</li>
+<li><code>Prop_ClassDesc</code> and <code>PropertyClassDesc</code> have the same 8 levels</li>
+</ul>
+<p>Joining the two datasets on common variables allowed verification that (<code>TotalAcres</code>, <code>Total_Acres</code>) and (<code>SitusAddress</code>, <code>Situs</code>) contain the same information. In addition, joining the two datasets on all variables did not produce any non-matching rows, indicating that <code>data/SusanVanderPlas.xlsx</code> contains a subset of the data present in <code>data/SusanVanderPlas-New.xlsx</code>. What is curious is that <code>data/SusanVanderPlas-New.xlsx</code> contains more rows and columns than <code>data/SusanVanderplas.xlsx</code> but takes up approximately 0.3 MB less space on disk.</p>
+<p>After joining the two data tables to ensure that the maximum information available is analyzed, there are 128511 records with 39 available variables.</p>
+<div class="cell" data-hash="property-data-description_cache/html/unnamed-chunk-5_0ce5f2f8d7d67d7827d453e907b672d8">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Data summary</caption>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Name</td>
+<td style="text-align: left;">lc_data</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Number of rows</td>
+<td style="text-align: left;">128511</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Number of columns</td>
+<td style="text-align: left;">39</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">_______________________</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Column type frequency:</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">character</td>
+<td style="text-align: left;">22</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">numeric</td>
+<td style="text-align: left;">17</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">________________________</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Group variables</td>
+<td style="text-align: left;">None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: character</strong></p>
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 13%">
+<col style="width: 18%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 7%">
+<col style="width: 11%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">skim_variable</th>
+<th style="text-align: right;">n_missing</th>
+<th style="text-align: right;">complete_rate</th>
+<th style="text-align: right;">min</th>
+<th style="text-align: right;">max</th>
+<th style="text-align: right;">empty</th>
+<th style="text-align: right;">n_unique</th>
+<th style="text-align: right;">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Parcel_ID</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">121864</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Owner</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">80</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">97863</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Own_Address1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">93</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">87530</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Own_Address2</td>
+<td style="text-align: right;">113940</td>
+<td style="text-align: right;">0.11</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3968</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Own_Address3</td>
+<td style="text-align: right;">126427</td>
+<td style="text-align: right;">0.02</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">180</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Own_City</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1341</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Own_State</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Own_Zip</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3464</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Own_UnitNumber</td>
+<td style="text-align: right;">120246</td>
+<td style="text-align: right;">0.06</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1016</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PrimaryUseDesc</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SitusAddress</td>
+<td style="text-align: right;">10758</td>
+<td style="text-align: right;">0.92</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">55</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">112118</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LegalDescription</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">672</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">121856</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PropertyClassDesc</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Zoning</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">54</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ResTypeDesc</td>
+<td style="text-align: right;">27982</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MSStyle</td>
+<td style="text-align: right;">27993</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">QualityDesc</td>
+<td style="text-align: right;">27982</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Rating</td>
+<td style="text-align: right;">27982</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ImpType</td>
+<td style="text-align: right;">27982</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Foundation</td>
+<td style="text-align: right;">28001</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GarageCap</td>
+<td style="text-align: right;">38373</td>
+<td style="text-align: right;">0.70</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ComBldgTypeDesc</td>
+<td style="text-align: right;">118898</td>
+<td style="text-align: right;">0.07</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">68</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 8%">
+<col style="width: 12%">
+<col style="width: 8%">
+<col style="width: 9%">
+<col style="width: 4%">
+<col style="width: 8%">
+<col style="width: 7%">
+<col style="width: 8%">
+<col style="width: 11%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">skim_variable</th>
+<th style="text-align: right;">n_missing</th>
+<th style="text-align: right;">complete_rate</th>
+<th style="text-align: right;">mean</th>
+<th style="text-align: right;">sd</th>
+<th style="text-align: right;">p0</th>
+<th style="text-align: right;">p25</th>
+<th style="text-align: right;">p50</th>
+<th style="text-align: right;">p75</th>
+<th style="text-align: right;">p100</th>
+<th style="text-align: left;">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">PrimeUse</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">4.07</td>
+<td style="text-align: right;">5.41</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">29.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">TotalAcres</td>
+<td style="text-align: right;">2764</td>
+<td style="text-align: right;">0.98</td>
+<td style="text-align: right;">5.04</td>
+<td style="text-align: right;">20.54</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.15</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.33</td>
+<td style="text-align: right;">612.26</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">YrBlt</td>
+<td style="text-align: right;">27982</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">1974.90</td>
+<td style="text-align: right;">33.17</td>
+<td style="text-align: right;">1850</td>
+<td style="text-align: right;">1955.00</td>
+<td style="text-align: right;">1979.0</td>
+<td style="text-align: right;">2002.00</td>
+<td style="text-align: right;">2024.00</td>
+<td style="text-align: left;">▁▂▃▇▇</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">YrRemod</td>
+<td style="text-align: right;">119822</td>
+<td style="text-align: right;">0.07</td>
+<td style="text-align: right;">6630.15</td>
+<td style="text-align: right;">304627.86</td>
+<td style="text-align: right;">1980</td>
+<td style="text-align: right;">2004.00</td>
+<td style="text-align: right;">2009.0</td>
+<td style="text-align: right;">2015.00</td>
+<td style="text-align: right;">20122007.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Remodel</td>
+<td style="text-align: right;">119702</td>
+<td style="text-align: right;">0.07</td>
+<td style="text-align: right;">5.61</td>
+<td style="text-align: right;">1.42</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">5.0</td>
+<td style="text-align: right;">7.00</td>
+<td style="text-align: right;">9.00</td>
+<td style="text-align: left;">▁▅▇▇▂</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">TotLivingArea</td>
+<td style="text-align: right;">27983</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">1505.47</td>
+<td style="text-align: right;">643.38</td>
+<td style="text-align: right;">310</td>
+<td style="text-align: right;">1067.00</td>
+<td style="text-align: right;">1365.0</td>
+<td style="text-align: right;">1758.00</td>
+<td style="text-align: right;">13390.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bedrooms</td>
+<td style="text-align: right;">28003</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">2.77</td>
+<td style="text-align: right;">0.82</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2.00</td>
+<td style="text-align: right;">3.0</td>
+<td style="text-align: right;">3.00</td>
+<td style="text-align: right;">12.00</td>
+<td style="text-align: left;">▅▇▁▁▁</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">5FixBath</td>
+<td style="text-align: right;">118879</td>
+<td style="text-align: right;">0.07</td>
+<td style="text-align: right;">1.01</td>
+<td style="text-align: right;">0.12</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">4.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">4FixBath</td>
+<td style="text-align: right;">104567</td>
+<td style="text-align: right;">0.19</td>
+<td style="text-align: right;">1.12</td>
+<td style="text-align: right;">0.35</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">6.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">3FixBath</td>
+<td style="text-align: right;">29808</td>
+<td style="text-align: right;">0.77</td>
+<td style="text-align: right;">1.82</td>
+<td style="text-align: right;">0.74</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">2.0</td>
+<td style="text-align: right;">2.00</td>
+<td style="text-align: right;">11.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2FixBath</td>
+<td style="text-align: right;">98035</td>
+<td style="text-align: right;">0.24</td>
+<td style="text-align: right;">1.07</td>
+<td style="text-align: right;">0.27</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">4.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">AddlFix</td>
+<td style="text-align: right;">94306</td>
+<td style="text-align: right;">0.27</td>
+<td style="text-align: right;">1.44</td>
+<td style="text-align: right;">0.73</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">2.00</td>
+<td style="text-align: right;">10.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AssdLand_2023</td>
+<td style="text-align: right;">540</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">98472.74</td>
+<td style="text-align: right;">379796.19</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">35000.00</td>
+<td style="text-align: right;">49500.0</td>
+<td style="text-align: right;">75000.00</td>
+<td style="text-align: right;">24093910.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">AssdBldg_2023</td>
+<td style="text-align: right;">575</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">396459.94</td>
+<td style="text-align: right;">3526846.92</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">124572.50</td>
+<td style="text-align: right;">186100.0</td>
+<td style="text-align: right;">270400.00</td>
+<td style="text-align: right;">300526320.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AssdTotal_2023</td>
+<td style="text-align: right;">572</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">494948.01</td>
+<td style="text-align: right;">3682415.35</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">165800.00</td>
+<td style="text-align: right;">236300.0</td>
+<td style="text-align: right;">349600.00</td>
+<td style="text-align: right;">305002400.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ComBldgNo</td>
+<td style="text-align: right;">118898</td>
+<td style="text-align: right;">0.07</td>
+<td style="text-align: right;">1.56</td>
+<td style="text-align: right;">1.89</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">84.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ComNoUnits</td>
+<td style="text-align: right;">120246</td>
+<td style="text-align: right;">0.06</td>
+<td style="text-align: right;">9.81</td>
+<td style="text-align: right;">47.00</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">1454.00</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Breaking this summary down, we can see associations between variable missingness, which likely occurs due to the difference between residential and commercial properties, assessments, and valuation. Examining this hypothesis with a 10% sample of the data, clustering observations by missingness, we can see there is a group of observations that is largely missing the assessment information for residential housing, such as <code>ResTypeDesc</code>, …, <code>GarageCap</code>, but these observations are more likely to have <code>ComBldgNo</code>, …, <code>ComNoUnits</code>; there is also a group which seems to lack both sets of information.</p>
+</section>
+<section id="lincolnlancaster-county-parcel-gis" class="level3">
+<h3 class="anchored" data-anchor-id="lincolnlancaster-county-parcel-gis">Lincoln/Lancaster County Parcel GIS</h3>
+<p>Parcel-level GIS maps are available at https://maps.lincoln.ne.gov/default/index.html?viewer=GISViewer. These data were systematically downloaded using the draw rectangle tool, and the zip files are in <code>data/shapefiles/*</code>.</p>
+<p>It may make sense to systematically download any missing files via script, as spot-checks of missing parcels suggest the information is present in the system and may just not be exporting properly. Of the 17460 missing parcels in the data, 15887 are residential and may potentially affect the analysis. <a href="#fig-land-use-map" class="quarto-xref">Figure&nbsp;2</a> shows the property class type of properties with available spatial data.</p>
+<div class="cell" data-hash="property-data-description_cache/html/fig-land-use-map_15c9f71da5890048deae01687bde8525">
+<div class="cell-output-display">
+<div id="fig-land-use-map" class="quarto-figure quarto-figure-center anchored" width="576">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-land-use-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="property-data-description_files/figure-html/fig-land-use-map-1.png" class="img-fluid figure-img" width="576">
+</div>
+<figcaption class="figure quarto-float-caption quarto-float-fig" id="fig-land-use-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Map of property class type, for properties with corresponding spatial regions in the database.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="definitions" class="level2">
+<h2 class="anchored" data-anchor-id="definitions">Definitions</h2>
+<p>Some of the acronyms used by various government organizations are not necessarily well defined within the data set documentation.</p>
+<ul>
+<li>IOLL is an acronym meaning ‘Improvements on Leased Land’, which are taxed separately from the land itself, as the owner of the improvement is different than the owner of the land itself. <a href="https://revenue.nebraska.gov/sites/revenue.nebraska.gov/files/doc/pad/forms/402_Improvements_on_Leased_Land.pdf">Source</a></li>
+</ul>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    const typesetMath = (el) => {
+      if (window.MathJax) {
+        // MathJax Typeset
+        window.MathJax.typeset([el]);
+      } else if (window.katex) {
+        // KaTeX Render
+        var mathElements = el.getElementsByClassName("math");
+        var macros = [];
+        for (var i = 0; i < mathElements.length; i++) {
+          var texText = mathElements[i].firstChild;
+          if (mathElements[i].tagName == "SPAN") {
+            window.katex.render(texText.data, mathElements[i], {
+              displayMode: mathElements[i].classList.contains('display'),
+              throwOnError: false,
+              macros: macros,
+              fleqn: false
+            });
+          }
+        }
+      }
+    }
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        for (let i = 0; i < 2; i++) {
+          container.appendChild(note.children[i].cloneNode(true));
+        }
+        typesetMath(container);
+        return container.innerHTML
+      } else {
+        typesetMath(note);
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      typesetMath(note);
+      return note.innerHTML;
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
