@@ -42,6 +42,7 @@ rm(lc_data1_fix, lc_data1, lc_data2)
 ```
 
 ```{r shapefile-processing}
+#| include: false
 if (!file.exists("data/lincoln-shapes.Rdata")) {
   shapefile_list <- list.files("data/shapefiles/", full.names = T)
 
@@ -86,6 +87,13 @@ property_data <-  lc_data %>%
 
 map_data <- property_data %>%
   select(Parcel_ID, PropertyClass, PropertyClassStatus, Owner, Own_City, Own_State, ResTypeDesc, ImpType, Foundation, geometry)
+
+county_features <- st_read("data/lancaster-co-features.geojson") %>%
+  st_transform(common_proj4string)
+
+municipal_boundaries <- st_read("data/municipal-boundaries.geojson") %>%
+  st_transform(common_proj4string)
+  
 ```
 
 ```{r}
@@ -96,12 +104,6 @@ map_data <- property_data %>%
 #| out-width: 100%
 #| cache: true
 
-county_features <- st_read("data/lancaster-co-features.geojson") %>%
-  st_transform(common_proj4string)
-
-municipal_boundaries <- st_read("data/municipal-boundaries.geojson") %>%
-  st_transform(common_proj4string)
-  
 basemap <- ggplot() +
   theme_map() +
   ggtitle("Lancaster County, NE") +
